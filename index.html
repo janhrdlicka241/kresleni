@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kreslíme">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#dcecf7">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+html { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: #dcecf7; }
+body { margin: 0; font-size: 14px; }
+img { max-width: 100%; }
+</style>
+</head>
+<body>
+<title>Kreslíme zvířátka</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&subset=latin-ext&display=swap">
+<style>
+/* Layout: one-screen tablet app — home with sections, a big paper sheet with step-by-step lines, journal comparing photos with the reference */
+:root {
+  --sky: #dcecf7;
+  --sheet: #ffffff;
+  --ink: #26323d;
+  --muted: #5f7383;
+  --new: #e5432f;
+  --go: #ffc531;
+  --go-ink: #3a2a00;
+  --go-edge: #d99c00;
+  --line: #b9d3e6;
+  --gold: #f2a900;
+  --display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Nunito", system-ui, sans-serif;
+  color-scheme: light;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--sky); color: var(--ink); font-family: var(--body);
+  -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+  overflow: hidden;
+}
+.app {
+  height: 100%; display: flex; flex-direction: column;
+  padding-block: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box; max-width: 1200px; margin: 0 auto;
+}
+.screen { flex: 1; min-height: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; margin: 0; text-wrap: balance; }
+button, .btn { font-family: var(--display); font-weight: 800; border: 0; cursor: pointer; color: inherit; font-size: inherit; }
+button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline-offset: 3px; }
+.btn-soft { background: var(--sheet); border-radius: 16px; padding: 10px 16px; font-size: 1.1rem; box-shadow: 0 3px 0 var(--line); display: inline-flex; align-items: center; gap: 8px; }
+.btn-go { background: var(--go); color: var(--go-ink); box-shadow: 0 5px 0 var(--go-edge); }
+.star { width: 1em; height: 1em; fill: var(--gold); flex: none; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+
+/* Home */
+.home { overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding-bottom: 20px; }
+.head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.head h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1; flex: 1; min-width: 0; }
+.stars { font-family: var(--display); font-weight: 800; font-size: 1.5rem; display: inline-flex; align-items: center; gap: 6px; background: var(--sheet); border-radius: 16px; padding: 6px 14px; box-shadow: 0 3px 0 var(--line); font-variant-numeric: tabular-nums; }
+.badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge { background: var(--sheet); border-radius: 999px; padding: 6px 14px 6px 8px; font-weight: 800; font-size: .95rem; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.badge .medal { width: 24px; height: 24px; border-radius: 50%; background: var(--line); display: grid; place-items: center; }
+.badge .medal svg { width: 15px; height: 15px; fill: #fff; }
+.badge.on { color: var(--ink); box-shadow: 0 2px 0 var(--line); }
+.badge.on .medal { background: var(--gold); }
+.badge:not(.on) { opacity: .6; }
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.sec-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.sec-h h2 { font-size: 1.7rem; }
+.sec-h span { color: var(--muted); font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+.card {
+  position: relative; background: var(--sheet); border-radius: 22px; padding: 12px 12px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  box-shadow: 0 4px 0 var(--line); transition: transform .12s;
+}
+.card:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.card svg.pic { width: 100%; max-width: 160px; aspect-ratio: 1; }
+.card .name { font-size: 1.3rem; }
+.card .meta { font-family: var(--body); font-size: .9rem; color: var(--muted); font-weight: 600; }
+.card .done { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; }
+.card.locked svg.pic { opacity: .18; }
+.card.locked .meta { color: var(--ink); }
+.lock { position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%); width: 54px; height: 54px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; }
+.lock svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 2.4; }
+
+/* Draw screen */
+.draw { display: grid; gap: 14px; grid-template-rows: auto 1fr auto; }
+.top { display: flex; align-items: center; gap: 12px; }
+.top h2 { font-size: 1.8rem; flex: 1; min-width: 0; }
+.count { font-size: 1.1rem; color: var(--muted); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tip { font-size: clamp(1.25rem, 2.8vw, 1.7rem); font-weight: 800; line-height: 1.25; min-height: 2.5em; display: flex; align-items: center; gap: 12px; }
+.tip .swatch { flex: none; width: 34px; height: 8px; border-radius: 4px; background: var(--new); }
+.stage { min-height: 0; min-width: 0; display: flex; justify-content: center; align-items: center; container-type: size; }
+.sheet { background: var(--sheet); border-radius: 24px; width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); box-shadow: 0 6px 0 var(--line); display: flex; }
+.sheet svg { width: 100%; height: 100%; }
+.dots { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.dots span { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+.dots span.on { background: var(--ink); }
+.dots span.cur { background: var(--new); transform: scale(1.3); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-weight: 700; font-size: .95rem; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 3px dashed #8db8de; vertical-align: middle; margin-right: 6px; }
+.legend i.hatch { height: 12px; border: 0; background: repeating-linear-gradient(45deg, var(--muted) 0 1.5px, transparent 1.5px 6px); }
+.nav { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+.nav > * { border-radius: 22px; padding: 18px; font-size: clamp(1.3rem, 3.2vw, 1.9rem); text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.prev { background: var(--sheet); box-shadow: 0 5px 0 var(--line); }
+.nav > *:active { transform: translateY(4px); box-shadow: none; }
+.nav button:disabled { opacity: .35; transform: none; }
+.foot { display: flex; flex-direction: column; gap: 12px; }
+.again { align-self: center; background: none; color: var(--muted); text-decoration: underline; font-size: 1.05rem; padding: 4px 8px; }
+
+/* Compare + journal */
+.compare, .journal { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.cmp-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cmp-body.over { grid-template-columns: 1fr; justify-items: center; }
+.frame { background: var(--sheet); border-radius: 22px; box-shadow: 0 5px 0 var(--line); padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.frame h3 { font-size: 1.2rem; text-align: center; }
+.frame .box { position: relative; aspect-ratio: 1; width: 100%; max-width: 100%; }
+.frame .box > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.cmp-body.over .frame { width: min(100%, 62vh); }
+.seg { display: inline-flex; background: var(--sheet); border-radius: 16px; padding: 4px; gap: 4px; box-shadow: 0 3px 0 var(--line); }
+.seg button { background: none; border-radius: 12px; padding: 8px 14px; font-size: 1.05rem; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.row input[type=range] { flex: 1; min-width: 160px; accent-color: var(--new); height: 32px; }
+.danger { color: var(--new); }
+.jgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.jcard { background: var(--sheet); border-radius: 20px; padding: 10px; box-shadow: 0 4px 0 var(--line); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.jcard .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.jcard .pair > * { aspect-ratio: 1; width: 100%; object-fit: cover; border-radius: 12px; background: #f1f5f8; }
+.jcard b { font-family: var(--display); font-size: 1.2rem; }
+.jcard span { color: var(--muted); font-weight: 600; font-size: .9rem; }
+.empty { background: var(--sheet); border-radius: 22px; padding: 28px; font-size: 1.2rem; font-weight: 700; color: var(--muted); max-width: 60ch; }
+.parent { margin-top: 10px; align-self: flex-start; color: var(--muted); font-size: .95rem; }
+.parent.hold { background: var(--line); }
+.note { color: var(--muted); font-weight: 600; }
+
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 18px); transform: translate(-50%, -220%); visibility: hidden; background: var(--ink); color: #fff; font-family: var(--display); font-weight: 800; font-size: 1.4rem; padding: 12px 22px; border-radius: 18px; display: flex; align-items: center; gap: 10px; transition: transform .35s cubic-bezier(.3,1.4,.6,1); z-index: 20; }
+.toast.show { transform: translate(-50%, 0); visibility: visible; }
+.busy { position: fixed; inset: 0; background: rgba(38,50,61,.45); display: grid; place-items: center; z-index: 30; color: #fff; font-family: var(--display); font-size: 1.6rem; font-weight: 800; }
+
+@media (orientation: landscape) and (min-width: 760px) {
+  .draw { grid-template-columns: minmax(0, 1fr) minmax(260px, 350px); grid-template-rows: auto 1fr; }
+  .top { grid-column: 1 / -1; }
+  .stage { grid-column: 1; grid-row: 2; }
+  .side { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+  .nav { grid-template-columns: 1fr; }
+  .nav > :last-child { order: -1; padding: 26px; }
+}
+@media (max-width: 560px) { .cmp-body { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <section class="screen home" id="home">
+    <div class="head">
+      <h1>Kreslíme</h1>
+      <span class="stars" id="stars"></span>
+      <button class="btn-soft" id="openJournal"></button>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div id="sections"></div>
+  </section>
+
+  <section class="screen draw" id="draw" hidden>
+    <div class="top">
+      <button class="btn-soft" id="back">◀ Zpět</button>
+      <h2 id="title"></h2>
+      <div class="count" id="count"></div>
+    </div>
+    <div class="stage"><div class="sheet"><svg id="canvas" viewBox="0 0 400 400"></svg></div></div>
+    <div class="side foot">
+      <div class="tip"><span class="swatch" id="swatch"></span><span id="tip"></span></div>
+      <div class="legend" id="legend"><span><i></i>slabě, pak vygumuj</span><span><i class="hatch"></i>stínuj tužkou</span></div>
+      <div class="dots" id="dots"></div>
+      <div class="nav">
+        <button class="prev" id="prev">◀ Zpět</button>
+        <button class="btn-go" id="next">Další ▶</button>
+        <label class="btn btn-go" id="snap" hidden><input class="vh" type="file" accept="image/*" capture="environment" id="photo">Vyfotit obrázek</label>
+      </div>
+      <button class="again" id="again" hidden>Kreslit znovu od začátku</button>
+    </div>
+  </section>
+
+  <section class="screen compare" id="compare" hidden>
+    <div class="top">
+      <button class="btn-soft" id="cmpBack">◀ Zpět</button>
+      <h2 id="cmpTitle"></h2>
+    </div>
+    <div class="row">
+      <div class="seg" role="group" aria-label="Zobrazení">
+        <button id="modeSide" aria-pressed="true">Vedle sebe</button>
+        <button id="modeOver" aria-pressed="false">Přes sebe</button>
+      </div>
+      <input type="range" id="mix" min="0" max="100" value="50" aria-label="Průhlednost předlohy" hidden>
+    </div>
+    <div class="cmp-body" id="cmpBody">
+      <div class="frame" id="frameRef"><h3>Předloha</h3><div class="box"><svg id="cmpRef" viewBox="0 0 400 400"></svg></div></div>
+      <div class="frame" id="framePhoto"><h3>Můj obrázek</h3><div class="box"><img id="cmpPhoto" alt="Fotka nakresleného obrázku"></div></div>
+    </div>
+    <p class="note" id="cmpNote"></p>
+    <div class="row">
+      <label class="btn btn-soft"><input class="vh" type="file" accept="image/*" capture="environment" id="rephoto">Vyfotit znovu</label>
+      <button class="btn-soft danger" id="del">Smazat z deníku</button>
+    </div>
+  </section>
+
+  <section class="screen journal" id="journal" hidden>
+    <div class="top">
+      <button class="btn-soft" id="jBack">◀ Zpět</button>
+      <h2>Můj deník</h2>
+    </div>
+    <div class="jgrid" id="jgrid"></div>
+    <button class="btn-soft parent" id="unlock"></button>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+<div class="busy" id="busy" hidden>Ukládám fotku…</div>
+
+<script>
+const ANIMALS = [
+  { id: 'kocka', name: 'Kočička', steps: [
+    ['Nakresli velký kulatý obličej.', [['c',200,140,70,'#f4a340',0]]],
+    ['Přidej dvě špičatá ouška.', [['p','M150 98 L150 45 L188 74','#f4a340',-1],['p','M250 98 L250 45 L212 74','#f4a340',-1]]],
+    ['Oči, malý nosík a pusinku.', [['c',175,128,9,'ink',2],['c',225,128,9,'ink',2],['p','M192 152 L208 152 L200 162 Z','#e86b7c',2],['p','M200 162 Q190 178 179 170 M200 162 Q210 178 221 170',null,2]]],
+    ['Tři vousky na každou stranu.', [['p','M168 158 L118 150 M168 165 L116 168 M168 172 L120 186 M232 158 L282 150 M232 165 L284 168 M232 172 L280 186',null,3]]],
+    ['Pod hlavu nakresli tělíčko.', [['p','M162 200 Q120 300 140 350 L260 350 Q280 300 238 200','#f4a340',-1]]],
+    ['Dvě tlapičky dole.', [['e',176,350,24,12,'#f7c27e',1],['e',224,350,24,12,'#f7c27e',1]]],
+    ['A nakonec dlouhý ocásek.', [['p','M268 330 Q340 335 328 262 Q322 232 300 244','#f4a340',-2]]],
+  ]},
+  { id: 'ryba', name: 'Rybička', steps: [
+    ['Nakresli velké šišaté tělo.', [['e',190,200,110,70,'#ff9a3c',0]]],
+    ['Vzadu přidej ocásek.', [['p','M296 184 L362 130 L348 200 L362 270 L296 216','#ffc04d',-1]]],
+    ['Velké oko s puntíkem.', [['c',132,182,15,'#ffffff',2],['c',128,182,6,'ink',3]]],
+    ['Malou pusinku vpředu.', [['p','M86 212 Q100 222 114 213',null,2]]],
+    ['Ploutvičku nahoře a dole.', [['p','M150 138 Q190 82 240 138','#ffc04d',-1],['p','M180 266 Q200 310 230 262','#ffc04d',-1]]],
+    ['Dva proužky přes tělo.', [['p','M205 132 Q225 200 205 268',null,2],['p','M250 142 Q266 200 250 258',null,2]]],
+    ['Bublinky z pusinky.', [['c',62,150,10,'#bfe3ff',4],['c',48,110,7,'#bfe3ff',4],['c',62,76,5,'#bfe3ff',4]]],
+  ]},
+  { id: 'sova', name: 'Sovička', steps: [
+    ['Nakresli velké vajíčko – tělo.', [['e',200,220,110,140,'#9b6b43',0]]],
+    ['Nahoře dvě pírka jako ouška.', [['p','M118 124 L110 55 L160 90','#9b6b43',-1],['p','M282 124 L290 55 L240 90','#9b6b43',-1]]],
+    ['Dvě velké kulaté oči.', [['c',160,160,38,'#ffffff',2],['c',240,160,38,'#ffffff',2],['c',160,162,15,'ink',3],['c',240,162,15,'ink',3]]],
+    ['Mezi oči malý zobáček.', [['p','M188 200 L212 200 L200 226 Z','#f5a623',3]]],
+    ['Na bříško ovál a pírka.', [['e',200,288,64,66,'#e8cfa6',1],['p','M172 262 Q180 274 188 262 M200 262 Q208 274 216 262 M186 288 Q194 300 202 288 M214 288 Q222 300 230 288 M172 314 Q180 326 188 314 M200 314 Q208 326 216 314',null,2]]],
+    ['Křidélka po stranách.', [['p','M92 200 Q58 272 126 322','#7a4f2e',1],['p','M308 200 Q342 272 274 322','#7a4f2e',1]]],
+    ['Nožičky a větev.', [['p','M60 382 L340 382','#7a4f2e',-2],['p','M168 356 L162 378 M178 359 L178 380 M188 357 L194 378 M212 357 L206 378 M222 359 L222 380 M232 356 L238 378',null,2]]],
+  ]},
+  { id: 'prase', name: 'Prasátko', steps: [
+    ['Nakresli velký kulatý obličej.', [['c',200,200,120,'#f7b2c4',0]]],
+    ['Dvě trojúhelníková ouška.', [['p','M110 120 L95 50 L165 88','#f08fab',-1],['p','M290 120 L305 50 L235 88','#f08fab',-1]]],
+    ['Doprostřed velký čumáček.', [['e',200,232,56,38,'#f08fab',1]]],
+    ['Do čumáčku dvě dírky.', [['e',182,232,8,13,'ink',2],['e',218,232,8,13,'ink',2]]],
+    ['Dvě očička.', [['c',152,162,11,'ink',2],['c',248,162,11,'ink',2]]],
+    ['Usměvavou pusinku a tvářičky.', [['p','M168 288 Q200 308 232 288',null,2],['c',118,236,16,'#ff8fa8',1],['c',282,236,16,'#ff8fa8',1]]],
+  ]},
+  { id: 'pes', name: 'Pejsek', steps: [
+    ['Nakresli šišatou hlavu.', [['e',200,190,105,115,'#e0b07a',0]]],
+    ['Dvě dlouhá plandavá ouška.', [['p','M112 128 Q48 150 70 262 Q102 272 116 220','#8a5a32',1],['p','M288 128 Q352 150 330 262 Q298 272 284 220','#8a5a32',1]]],
+    ['Flíček kolem jednoho oka.', [['e',240,166,32,26,'#8a5a32',1]]],
+    ['Dvě očička.', [['c',164,168,12,'ink',3],['c',238,168,12,'ink',3]]],
+    ['Dole velký čumák.', [['e',200,246,60,45,'#f6dcb8',2]]],
+    ['Čumáček a pusinku.', [['e',200,222,20,13,'ink',3],['p','M200 235 L200 255 M200 255 Q186 270 172 258 M200 255 Q214 270 228 258',null,3]]],
+    ['Vyplazený jazýček.', [['p','M190 266 Q200 296 210 266','#ff7a8a',2]]],
+  ]},
+];
+ANIMALS.forEach(a => a.level = 'lehke');
+
+// ---- helpers for the harder pictures ----
+// ['h', d, z] = shaded area: hatched in the step view, soft shadow in the coloured picture; 'white' = always left white
+const P = (cx, cy, r, a) => (cx + r * Math.cos(a)).toFixed(1) + ' ' + (cy + r * Math.sin(a)).toFixed(1);
+const E = (cx, cy, rx, ry) => `M${cx - rx} ${cy} a${rx} ${ry} 0 1 0 ${2 * rx} 0 a${rx} ${ry} 0 1 0 ${-2 * rx} 0 Z`;
+function petals(cx, cy, R, peak, n, off) {
+  const ctrl = 2 * peak - R * Math.cos(Math.PI / n);
+  let d = '';
+  for (let k = 0; k < n; k++) {
+    const a0 = off + k * 2 * Math.PI / n, a1 = a0 + 2 * Math.PI / n;
+    if (!k) d += 'M' + P(cx, cy, R, a0);
+    d += ' Q' + P(cx, cy, ctrl, (a0 + a1) / 2) + ' ' + P(cx, cy, R, a1);
+  }
+  return d + ' Z';
+}
+const rays = (cx, cy, r1, r2, n, off) => Array.from({ length: n }, (_, k) => { const a = off + k * 2 * Math.PI / n; return 'M' + P(cx, cy, r1, a) + ' L' + P(cx, cy, r2, a); }).join(' ');
+const sector = (cx, cy, r1, r2, a0, a1) => `M${P(cx, cy, r2, a0)} A${r2} ${r2} 0 0 1 ${P(cx, cy, r2, a1)} L${P(cx, cy, r1, a1)} A${r1} ${r1} 0 0 0 ${P(cx, cy, r1, a0)} Z`;
+const rimLines = Array.from({ length: 7 }, (_, k) => `M${95 + k * 32} 250 L${95 + k * 32} 274`).join(' ');
+
+const HARD = [
+  { id: 'liska', name: 'Liška', steps: [
+    ['Nakresli hlavu – nahoře širokou, dole do špičky.', [['p','M130 110 Q140 70 200 75 Q260 70 270 110 Q275 140 240 165 L200 195 L160 165 Q125 140 130 110 Z','#e8772e',0]]],
+    ['Dvě velká špičatá ouška.', [['p','M142 92 L128 30 L182 77','#e8772e',-1],['p','M258 92 L272 30 L218 77','#e8772e',-1]]],
+    ['Do oušek menší tmavé trojúhelníčky.', [['p','M144 80 L136 46 L166 72 Z','#4a2e22',1],['p','M256 80 L264 46 L234 72 Z','#4a2e22',1]]],
+    ['Bílé tvářičky až k čumáčku.', [['p','M134 124 Q166 138 186 172 L200 195 L214 172 Q234 138 266 124 Q262 150 240 165 L200 195 L160 165 Q138 150 134 124 Z','#fff4e6',1]]],
+    ['Mandlová očka.', [['p','M158 118 Q171 106 184 118 Q171 125 158 118 Z','ink',2],['p','M216 118 Q229 106 242 118 Q229 125 216 118 Z','ink',2]]],
+    ['Čumáček a krátkou čárku pod ním.', [['e',200,188,10,7,'ink',3],['p','M200 195 L200 204',null,3]]],
+    ['Pod hlavu tělíčko.', [['p','M165 180 Q130 240 135 320 Q140 355 170 360 L230 360 Q260 355 265 320 Q270 240 235 180','#e8772e',-1]]],
+    ['Bílé bříško pod bradou.', [['p','M175 185 Q162 240 200 282 Q238 240 225 185','#fff4e6',-0.5]]],
+    ['Přední nožičky – čtyři rovné čáry.', [['p','M170 290 L170 352 M192 296 L192 352 M208 296 L208 352 M230 290 L230 352',null,0]]],
+    ['Tmavé tlapky.', [['e',181,356,17,9,'#4a2e22',1],['e',219,356,17,9,'#4a2e22',1]]],
+    ['Velký huňatý ocas.', [['p','M262 342 Q340 352 346 282 Q350 222 300 200 Q322 262 282 300 Q270 320 262 332','#e8772e',-2]]],
+    ['Bílou špičku ocasu.', [['p','M300 200 Q345 212 347 262 Q330 236 312 232 Q316 216 300 200 Z','#fff4e6',-1.5]]],
+    ['Chloupky na tvářích a na ocase.', [['p','M136 128 l-9 6 M140 138 l-8 8 M264 128 l9 6 M260 138 l8 8 M318 262 l12 -3 M312 286 l13 0 M300 306 l12 4',null,3]]],
+    ['Vystínuj levý bok tělíčka – šrafuj tužkou.', [['h','M165 200 Q138 250 140 320 Q143 345 160 355 Q154 300 172 218 Z',5]]],
+    ['Vystínuj bříško pod bradou.', [['h','M180 194 Q200 214 220 194 Q212 228 200 236 Q188 228 180 194 Z',5]]],
+    ['Stín pod liškou na zemi.', [['h',E(215,366,125,13),-3]]],
+  ]},
+  { id: 'zajic', name: 'Zajíček', steps: [
+    ['Nakresli oválnou hlavu.', [['e',200,150,70,62,'#d6cfc4',0]]],
+    ['Dvě dlouhá ouška.', [['p','M168 96 Q138 22 162 10 Q190 14 188 92','#d6cfc4',-1],['p','M212 92 Q212 14 240 12 Q264 24 234 98','#d6cfc4',-1]]],
+    ['Růžové vnitřky oušek.', [['p','M172 90 Q152 34 166 24 Q182 30 182 90 Z','#f3b3c0',-0.5],['p','M218 90 Q222 30 238 26 Q252 40 230 92 Z','#f3b3c0',-0.5]]],
+    ['Velká očka, odlesk nech bílý.', [['e',172,140,10,13,'ink',2],['e',228,140,10,13,'ink',2],['c',175,135,3.5,'white',3],['c',231,135,3.5,'white',3]]],
+    ['Čumáček a pusinku.', [['p','M192 166 L208 166 L200 175 Z','#f08fab',3],['p','M200 175 Q200 186 189 189 M200 175 Q200 186 211 189',null,3]]],
+    ['Dva zoubky.', [['p','M194 188 L194 199 L206 199 L206 188','white',2],['p','M200 190 L200 199',null,2]]],
+    ['Vousky.', [['p','M186 172 L138 164 M186 178 L140 186 M214 172 L262 164 M214 178 L260 186',null,3]]],
+    ['Tělíčko jako hruška.', [['p','M152 198 Q100 262 120 340 Q130 365 170 365 L230 365 Q270 365 280 340 Q300 262 248 198','#d6cfc4',-1]]],
+    ['Světlé bříško.', [['e',200,298,50,56,'#f5f0e8',-0.5]]],
+    ['Zadní tlapky po stranách.', [['e',130,356,40,13,'#d6cfc4',-1.5],['e',270,356,40,13,'#d6cfc4',-1.5]]],
+    ['Přední tlapky a prstíky.', [['e',178,350,20,14,'#d6cfc4',0.5],['e',222,350,20,14,'#d6cfc4',0.5],['p','M172 343 l0 9 M184 343 l0 9 M216 343 l0 9 M228 343 l0 9',null,0.6]]],
+    ['Kulatý ocásek.', [['c',292,318,20,'white',-2]]],
+    ['Chloupky na tvářích.', [['p','M132 148 l-9 1 M134 158 l-8 5 M268 148 l9 1 M266 158 l8 5',null,3]]],
+    ['Vystínuj pravý bok – šrafuj.', [['h','M262 215 Q292 270 276 338 Q268 352 252 358 Q276 290 246 212 Z',5]]],
+    ['Stín pod bradičkou.', [['h','M165 204 Q200 218 235 204 Q232 224 200 234 Q168 224 165 204 Z',5]]],
+    ['Stín na zemi.', [['h',E(200,370,145,12),-3]]],
+  ]},
+  { id: 'zelva', name: 'Želva', steps: [
+    ['Nakresli krunýř jako kopuli.', [['p','M70 250 Q80 120 190 115 Q300 120 310 250 Z','#5f9e45',0]]],
+    ['Pod krunýř pruh – okraj.', [['p','M60 250 L320 250 Q322 272 300 274 L80 274 Q58 272 60 250 Z','#c9a24a',1]]],
+    ['Vpravo hlavu na krku.', [['p','M300 232 Q330 192 362 198 Q390 206 386 232 Q378 255 345 256 L310 256','#9fcf7a',-1]]],
+    ['Očko a úsměv.', [['c',360,216,7,'ink',2],['c',362,213,2,'white',3],['p','M374 238 Q362 247 350 241',null,2]]],
+    ['Přední a zadní nohu.', [['p','M268 274 L266 322 Q284 332 300 322 L298 274','#9fcf7a',-1],['p','M96 274 L92 318 Q108 328 124 318 L124 274','#9fcf7a',-1]]],
+    ['Dvě nohy schované vzadu.', [['p','M232 274 L236 308 Q248 315 260 308 L260 274','#86b862',-2],['p','M140 274 L144 306 Q156 312 168 306 L168 274','#86b862',-2]]],
+    ['Malý ocásek.', [['p','M62 260 L34 274 L66 270','#9fcf7a',-1]]],
+    ['Doprostřed krunýře šestiúhelník.', [['p','M162 160 L218 160 L244 200 L218 240 L162 240 L136 200 Z','#7dbb5e',0.5]]],
+    ['Čáry od šestiúhelníku ke kraji.', [['p','M162 160 L141 125 M218 160 L239 125 M244 200 L304 214 M136 200 L76 214 M162 240 L150 250 M218 240 L232 250',null,0.6]]],
+    ['Rozděl okraj krunýře na dílky.', [['p',rimLines,null,1.5]]],
+    ['Drápky na nohách.', [['p','M272 320 l-2 7 M283 325 l0 7 M294 320 l2 7 M98 318 l-2 7 M108 322 l0 7 M118 318 l2 7',null,0]]],
+    ['Flíčky na hlavě a nohách.', [['c',340,226,4,null,0],['c',350,240,3,null,0],['c',283,295,4,null,0],['c',108,295,4,null,0]]],
+    ['Vystínuj spodek krunýře.', [['h','M74 228 Q190 246 306 228 L310 250 L70 250 Z',5]]],
+    ['Stín pod krkem.', [['h','M312 246 Q342 260 378 246 Q372 256 345 256 L310 256 Z',5]]],
+    ['Stín na zemi.', [['h',E(190,330,165,11),-3]]],
+  ]},
+  { id: 'tucnak', name: 'Tučňák', steps: [
+    ['Nakresli velké vajíčko – tělo.', [['p','M200 60 Q128 60 120 180 Q112 300 150 350 L250 350 Q288 300 280 180 Q272 60 200 60 Z','#2d3540',0]]],
+    ['Bílé bříško a obličej.', [['p','M200 104 Q160 98 156 150 Q142 250 170 338 L230 338 Q258 250 244 150 Q240 98 200 104 Z','#f4f7fa',1]]],
+    ['Očka, odlesk nech bílý.', [['c',180,135,9,'ink',2],['c',220,135,9,'ink',2],['c',183,131,3,'white',3],['c',223,131,3,'white',3]]],
+    ['Zobáček.', [['p','M184 158 L216 158 L200 182 Z','#f5a623',3],['p','M190 166 L210 166',null,3]]],
+    ['Růžové tvářičky.', [['c',168,166,9,'#ffb3c1',2],['c',232,166,9,'#ffb3c1',2]]],
+    ['Křídla po stranách.', [['p','M124 172 Q84 240 104 302 Q124 272 134 222','#2d3540',0.5],['p','M276 172 Q316 240 296 302 Q276 272 266 222','#2d3540',0.5]]],
+    ['Oranžové nožičky.', [['p','M160 348 Q148 368 170 371 L196 369 Q190 354 186 348','#f5a623',-1],['p','M240 348 Q252 368 230 371 L204 369 Q210 354 214 348','#f5a623',-1]]],
+    ['Šálu kolem krku.', [['p','M120 190 Q200 220 280 190 L282 212 Q200 242 118 212 Z','#e5432f',3]]],
+    ['Konec šály.', [['p','M232 222 L244 276 L266 270 L254 216','#e5432f',3.5]]],
+    ['Proužky na šále.', [['p','M160 204 L158 225 M200 212 L200 234 M240 205 L242 226 M240 248 L259 243',null,4]]],
+    ['Pírka na bříšku.', [['p','M182 262 l6 8 l6 -8 M206 262 l6 8 l6 -8 M194 290 l6 8 l6 -8',null,2]]],
+    ['Vystínuj pravou stranu bříška.', [['h','M240 236 Q258 280 230 338 L216 338 Q240 290 236 238 Z',5]]],
+    ['Stín pod šálou.', [['h','M124 214 Q200 244 278 214 L276 226 Q200 256 126 226 Z',5]]],
+    ['Stín na zemi.', [['h',E(200,372,115,10),-3]]],
+  ]},
+  { id: 'lev', name: 'Lvíček', steps: [
+    ['Nakresli obličej – nahoře užší, dole širší.', [['p','M150 120 Q150 85 200 85 Q250 85 250 120 L256 200 Q250 252 200 256 Q150 252 144 200 Z','#f2c46d',0]]],
+    ['Kolem velkou vlnitou hřívu.', [['p',petals(200,170,128,158,14,0),'#c8742c',-1]]],
+    ['Uvnitř druhou menší hřívu.', [['p',petals(200,170,104,126,12,0.13),'#dd8a3a',-0.5]]],
+    ['Dvě kulatá ouška.', [['c',148,92,22,'#f2c46d',-0.3],['c',252,92,22,'#f2c46d',-0.3]]],
+    ['Do oušek menší kolečka.', [['c',148,92,11,'#c8742c',-0.2],['c',252,92,11,'#c8742c',-0.2]]],
+    ['Mandlová očka.', [['p','M162 148 Q176 137 190 148 Q176 155 162 148 Z','ink',2],['p','M210 148 Q224 137 238 148 Q224 155 210 148 Z','ink',2]]],
+    ['Obočí.', [['p','M160 130 Q176 120 192 130 M208 130 Q224 120 240 130',null,2]]],
+    ['Dva kulaté polštářky čumáku.', [['c',184,214,22,'#fbe3b0',1],['c',216,214,22,'#fbe3b0',1]]],
+    ['Nosík nahoře.', [['p','M184 186 L216 186 Q216 199 200 206 Q184 199 184 186 Z','#6b3b2a',2]]],
+    ['Pusinku a bradičku.', [['p','M200 206 L200 222',null,2],['e',200,242,14,9,'#fbe3b0',0.8]]],
+    ['Tečky a vousky.', [['c',178,214,2.5,'ink',2],['c',188,224,2.5,'ink',2],['c',222,214,2.5,'ink',2],['c',212,224,2.5,'ink',2],['p','M166 210 L124 200 M166 220 L126 226 M234 210 L276 200 M234 220 L274 226',null,2]]],
+    ['Chlupy v hřívě – krátké čárky.', [['p',rays(200,170,116,144,20,0.08),null,-0.4]]],
+    ['Vystínuj pravou tvář.', [['h','M246 116 Q258 160 254 205 Q248 242 214 254 Q240 222 242 160 Z',5]]],
+    ['Stín pod čumákem.', [['h','M178 234 Q200 250 222 234 Q216 252 200 255 Q184 252 178 234 Z',5]]],
+    ['Vystínuj spodek hřívy.', [['h',sector(200,170,128,152,0.5,Math.PI - 0.5),-0.75]]],
+  ]},
+];
+HARD.forEach(a => { a.level = 'tezke'; ANIMALS.push(a); });
+
+// ---- realistic pencil drawings ----
+// shape objects: {d, fill?, z?, guide?, shade?: tone 1-4, clip?: d, thin?}
+const L = (d, o = {}) => ({ d, ...o });
+const C = (cx, cy, r, o = {}) => ({ d: E(cx, cy, r, r), ...o });
+const El = (cx, cy, rx, ry, o = {}) => ({ d: E(cx, cy, rx, ry), ...o });
+const G = sh => ({ ...sh, guide: true });
+const S = (d, tone = 1, o = {}) => ({ d, shade: tone, ...o });
+const R = (x, y, w, h) => `M${x} ${y} h${w} v${h} h${-w} Z`;
+const f1 = n => n.toFixed(1);
+function rng(seed) { let a = seed * 9301 + 49297; return () => { a = (a * 1103515245 + 12345) % 2147483648; return a / 2147483648; }; }
+function ER(cx, cy, rx, ry, deg) {
+  const a = deg * Math.PI / 180, x0 = cx - rx * Math.cos(a), y0 = cy - rx * Math.sin(a), x1 = cx + rx * Math.cos(a), y1 = cy + rx * Math.sin(a);
+  return `M${f1(x0)} ${f1(y0)} A${rx} ${ry} ${deg} 1 0 ${f1(x1)} ${f1(y1)} A${rx} ${ry} ${deg} 1 0 ${f1(x0)} ${f1(y0)} Z`;
+}
+// dark crescent on the side the angle points to (shadow side of a round form)
+function crescent(cx, cy, r, ang, th) {
+  const a0 = ang - 1.75, a1 = ang + 1.75;
+  const p0 = [cx + r * Math.cos(a0), cy + r * Math.sin(a0)], p1 = [cx + r * Math.cos(a1), cy + r * Math.sin(a1)];
+  const mid = [cx + (r - th) * Math.cos(ang), cy + (r - th) * Math.sin(ang)];
+  const c = [2 * mid[0] - (p0[0] + p1[0]) / 2, 2 * mid[1] - (p0[1] + p1[1]) / 2];
+  return `M${f1(p0[0])} ${f1(p0[1])} A${r} ${r} 0 1 1 ${f1(p1[0])} ${f1(p1[1])} Q${f1(c[0])} ${f1(c[1])} ${f1(p0[0])} ${f1(p0[1])} Z`;
+}
+// bumpy outline (foliage, fluff)
+function bumpy(cx, cy, rx, ry, n, amp, seed, a0 = 0, a1 = 2 * Math.PI, closed = true) {
+  const r = rng(seed); let d = '';
+  for (let k = 0; k <= n; k++) {
+    const a = a0 + (a1 - a0) * k / n, x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a);
+    if (!k) { d = `M${f1(x)} ${f1(y)}`; continue; }
+    const am = a - (a1 - a0) / n / 2, s = 1 + amp * (0.6 + 0.8 * r());
+    d += ` Q${f1(cx + rx * s * Math.cos(am))} ${f1(cy + ry * s * Math.sin(am))} ${f1(x)} ${f1(y)}`;
+  }
+  return d + (closed ? ' Z' : '');
+}
+// short hair strokes inside an ellipse
+function fur(seed, n, cx, cy, rx, ry, fmin, fmax, amin, amax, lmin, lmax, dirFn) {
+  const r = rng(seed); let d = '';
+  for (let i = 0; i < n; i++) {
+    const a = amin + (amax - amin) * r(), f = fmin + (fmax - fmin) * Math.sqrt(r());
+    const x = cx + rx * f * Math.cos(a), y = cy + ry * f * Math.sin(a);
+    const da = (dirFn ? dirFn(x, y, a) : a) + (r() - 0.5) * 0.5, len = lmin + (lmax - lmin) * r();
+    const x2 = x + len * Math.cos(da), y2 = y + len * Math.sin(da);
+    d += `M${f1(x)} ${f1(y)} Q${f1((x + x2) / 2 + (r() - 0.5) * 6)} ${f1((y + y2) / 2 + (r() - 0.5) * 6)} ${f1(x2)} ${f1(y2)} `;
+  }
+  return d;
+}
+function qpt(p0, p1, p2, t) { const u = 1 - t; return [u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]]; }
+function pine(x, y, h) {
+  return `M${x - 20} ${y} L${x} ${y - h * 0.45} L${x + 20} ${y} Z M${x - 16} ${y - h * 0.3} L${x} ${y - h * 0.75} L${x + 16} ${y - h * 0.3} Z M${x - 11} ${y - h * 0.6} L${x} ${y - h} L${x + 11} ${y - h * 0.6} Z M${x} ${y} L${x} ${y + 10}`;
+}
+
+// --- lesson: hatching ---
+const boxes = [30, 104, 178, 252, 326];
+const L_SRAF = { id: 'l-sraf', name: 'Šrafování', style: 'pencil', steps: [
+  { t: 'Nakresli pět čtverečků vedle sebe.', s: [L(boxes.map(x => R(x, 110, 60, 70)).join(' '))] },
+  { t: 'První nech bílý. Do druhého nakresli šikmé čárky – jen jemně, skoro nepřitlačuj.', s: [S(R(104, 110, 60, 70), 1)] },
+  { t: 'Do třetího stejné čárky, ale hustěji u sebe.', s: [S(R(178, 110, 60, 70), 2)] },
+  { t: 'Do čtvrtého čárky na jednu stranu a pak přes ně na druhou. Tomu se říká křížové šrafování.', s: [S(R(252, 110, 60, 70), 3)] },
+  { t: 'Pátý vystínuj co nejtmavěji. Tady můžeš přitlačit.', s: [S(R(326, 110, 60, 70), 4)] },
+  { t: 'Pod čtverečky nakresli dlouhý obdélník.', s: [L(R(30, 240, 356, 60))] },
+  { t: 'Vlevo začni tmavě a doprava povoluj, až skončíš úplně bíle. To je přechod.', s: [S(R(30, 240, 72, 60), 4), S(R(102, 240, 72, 60), 3), S(R(174, 240, 72, 60), 2), S(R(246, 240, 72, 60), 1)] },
+]};
+
+// --- lesson: sphere ---
+const L_KOULE = { id: 'l-koule', name: 'Koule se stínem', style: 'pencil', steps: [
+  { t: 'Nakresli velký kruh. Klidně ho obkresli podle hrnečku.', s: [C(200, 180, 100)] },
+  { t: 'Vlevo nahoře si slabě nakresli sluníčko. Odtud svítí světlo.', s: [G(L(E(52, 52, 16, 16) + ' ' + rays(52, 52, 22, 32, 8, 0)))] },
+  { t: 'Slabě obkresli malý ovál – odlesk. Tam nikdy nestínuj.', s: [G(El(162, 140, 22, 16))] },
+  { t: 'Celou kouli kromě odlesku jemně vystínuj.', s: [S(E(200, 180, 100, 100) + ' ' + E(162, 140, 22, 16), 1)] },
+  { t: 'Vpravo dole, kam světlo nedosvítí, udělej tmavý srpek. U kraje nech úzký světlejší proužek.', s: [S(crescent(200, 180, 92, Math.PI / 4, 34), 3)] },
+  { t: 'Pod koulí nakresli stín na zemi – placatý ovál, hodně tmavý.', s: [S(E(228, 292, 104, 12), 4)] },
+  { t: 'Vygumuj sluníčko i obrys odlesku. Koule vypadá kulatá!', erase: true, s: [] },
+]};
+
+// --- lesson: cube ---
+const L_KRYCHLE = { id: 'l-krychle', name: 'Krychle', style: 'pencil', steps: [
+  { t: 'Nakresli kosočtverec – vršek krychle.', s: [L('M200 90 L310 140 L200 190 L90 140 Z')] },
+  { t: 'Ze tří spodních rohů vytáhni svislé čáry dolů. Všechny stejně dlouhé.', s: [L('M90 140 L90 270 M200 190 L200 320 M310 140 L310 270')] },
+  { t: 'Spoj je dole.', s: [L('M90 270 L200 320 L310 270')] },
+  { t: 'Světlo svítí zleva shora. Vršek proto nech skoro bílý a levou stěnu vystínuj jemně.', s: [S('M90 140 L200 190 L200 320 L90 270 Z', 1)] },
+  { t: 'Pravou stěnu vystínuj tmavě, křížem.', s: [S('M200 190 L310 140 L310 270 L200 320 Z', 3)] },
+  { t: 'Vpravo na zem nakresli stín krychle. Je nejtmavší.', s: [S('M200 320 L276 346 L388 298 L310 270 Z', 4)] },
+]};
+
+// --- lesson: eye ---
+const EYE = 'M70 205 Q190 95 330 190 Q200 270 70 205 Z';
+const lashes = (() => { let d = ''; for (let k = 1; k <= 9; k++) { const t = k / 10, p = qpt([70, 205], [190, 95], [330, 190], t), lean = (t - 0.35) * 40; d += `M${f1(p[0])} ${f1(p[1])} Q${f1(p[0] + lean * 0.4)} ${f1(p[1] - 18)} ${f1(p[0] + lean + 6)} ${f1(p[1] - 30)} `; } return d; })();
+const L_OKO = { id: 'l-oko', name: 'Oko', style: 'pencil', steps: [
+  { t: 'Slabě nakresli vodorovnou pomocnou čáru.', s: [G(L('M50 202 L350 198'))] },
+  { t: 'Horní víčko – vysoký oblouk.', s: [L('M70 205 Q190 95 330 190')] },
+  { t: 'Dolní víčko – plošší oblouk.', s: [L('M70 205 Q200 270 330 190')] },
+  { t: 'Duhovka je kruh. Nahoře se schová pod víčko.', s: [C(198, 196, 58, { clip: EYE })] },
+  { t: 'Uprostřed velká tmavá zornička. Malé kolečko – světýlko – nech bílé.', s: [C(198, 196, 24, { fill: 'ink', clip: EYE }), C(178, 176, 10, { fill: 'white', z: 2 })] },
+  { t: 'Duhovku vystínuj krátkými čárkami od zorničky ven.', s: [L(rays(198, 196, 27, 56, 26, 0.1), { clip: EYE, thin: true }), S(E(198, 196, 58, 58), 1, { clip: EYE })] },
+  { t: 'Pod horním víčkem je stín. Vystínuj ho tmavě.', s: [S('M70 205 Q190 95 330 190 Q190 135 70 205 Z', 3, { clip: EYE })] },
+  { t: 'Řasy – zahnuté čárky z horního víčka. Na kraji kratší, uprostřed delší.', s: [L(lashes, { thin: true })] },
+  { t: 'Nad okem záhyb víčka a obočí.', s: [L('M92 176 Q190 82 316 160'), L('M70 110 Q180 30 336 92 Q190 58 70 110 Z')] },
+  { t: 'Obočí vystínuj a do koutku oka přidej malý ovál.', s: [S('M70 110 Q180 30 336 92 Q190 58 70 110 Z', 3), L('M70 205 Q84 194 94 208 Q82 214 70 205 Z')] },
+  { t: 'Vygumuj pomocnou čáru a jemně vystínuj pod okem.', erase: true, s: [S('M70 205 Q200 270 330 190 Q210 300 70 205 Z', 1)] },
+]};
+
+// --- lesson: fur ---
+const L_SRST = { id: 'l-srst', name: 'Srst a chloupky', style: 'pencil', steps: [
+  { t: 'Slabě nakresli velký ovál. Pak ho vygumuješ.', s: [G(El(200, 195, 130, 105))] },
+  { t: 'Šipkami si naznač, kam rostou chloupky – od středu ven.', s: [G(L(rays(200, 195, 40, 92, 8, 0.3)))] },
+  { t: 'První vrstva: krátké čárky ve směru šipek. Jemně, rychlým tahem.', s: [L(fur(1, 110, 200, 195, 130, 105, 0.15, 0.92, 0, 6.283, 14, 24), { thin: true })] },
+  { t: 'Druhá vrstva: hustěji dole a vpravo. Tam je stín.', s: [L(fur(2, 110, 200, 195, 130, 105, 0.35, 0.95, -0.3, 1.9, 12, 22), { thin: true })] },
+  { t: 'Okraj nedělej čárou! Jen chloupky, které vyčuhují ven.', erase: true, s: [L(fur(3, 90, 200, 195, 130, 105, 0.88, 1.0, 0, 6.283, 18, 28), { thin: true })] },
+  { t: 'Dole vpravo ještě vystínuj.', s: [S(bumpy(200, 195, 128, 103, 18, 0.06, 4, -0.2, 2.0, false) + ' Q210 220 200 195 Z', 2)] },
+  { t: 'Přidej očička – máš chlupáčka!', s: [C(168, 178, 11, { fill: 'ink' }), C(232, 178, 11, { fill: 'ink' }), C(171, 174, 3.5, { fill: 'white', z: 2 }), C(235, 174, 3.5, { fill: 'white', z: 2 })] },
+  { t: 'Pod chlupáčka stín na zemi.', s: [S(E(205, 332, 120, 10), 3)] },
+]};
+
+// --- realistic cat ---
+const CAT_EYE_L = 'M158 120 Q174 106 190 120 Q174 132 158 120 Z', CAT_EYE_R = 'M210 120 Q226 106 242 120 Q226 132 210 120 Z';
+const R_KOCKA = { id: 'r-kocka', name: 'Kočka', style: 'pencil', steps: [
+  { t: 'Slabounce nakresli kruh na hlavu. Pomocné čáry na konci vygumuješ.', s: [G(C(200, 118, 60))] },
+  { t: 'Křížek přes hlavu: svislá čára doprostřed a vodorovná tam, kde budou oči.', s: [G(L('M200 58 L200 178 M140 120 L260 120'))] },
+  { t: 'Pod hlavu slabě velký ovál na tělo.', s: [G(El(200, 272, 92, 104))] },
+  { t: 'Dvě špičatá ouška nahoře na kruhu.', s: [L('M158 74 L146 22 L190 60'), L('M242 74 L254 22 L210 60')] },
+  { t: 'Obrys hlavy – tvářičky jsou širší než kruh.', s: [L('M158 74 Q136 92 140 125 Q142 150 160 165 Q180 178 200 178 Q220 178 240 165 Q258 150 260 125 Q264 92 242 74 M190 60 Q200 56 210 60')] },
+  { t: 'Na tvářích chomáčky srsti – zubaté čárky.', s: [L('M141 132 L132 138 L142 142 L134 150 L146 152 M259 132 L268 138 L258 142 L266 150 L254 152')] },
+  { t: 'Oči jako mandle, na vodorovné pomocné čáře.', s: [L(CAT_EYE_L), L(CAT_EYE_R)] },
+  { t: 'Úzké zorničky a bílá světýlka.', s: [El(174, 119.5, 3.5, 9, { fill: 'ink', z: 1 }), El(226, 119.5, 3.5, 9, { fill: 'ink', z: 1 }), C(178, 114, 2.2, { fill: 'white', z: 2 }), C(230, 114, 2.2, { fill: 'white', z: 2 })] },
+  { t: 'Nosík na svislé čáře a pusinka.', s: [L('M192 142 L208 142 L200 151 Z'), L('M200 151 L200 158 M200 158 Q192 166 184 161 M200 158 Q208 166 216 161')] },
+  { t: 'Vousky – dlouhé, lehké čáry.', s: [L('M164 152 Q130 146 100 150 M164 157 Q130 158 102 166 M164 162 Q132 170 108 182 M236 152 Q270 146 300 150 M236 157 Q270 158 298 166 M236 162 Q268 170 292 182', { thin: true })] },
+  { t: 'Obrys těla podle oválu.', s: [L('M164 172 Q128 200 120 262 Q114 330 142 366 Q148 374 152 372 M236 172 Q272 200 280 262 Q286 330 258 366 Q252 374 248 372')] },
+  { t: 'Přední nohy a tlapky s prstíky.', s: [L('M176 250 Q172 316 170 360 M224 250 Q228 316 230 360'), El(170, 368, 22, 10), El(230, 368, 22, 10), L('M162 362 L162 374 M176 362 L176 374 M222 362 L222 374 M236 362 L236 374', { thin: true })] },
+  { t: 'Ocas kolem tlapek.', s: [L('M258 368 Q336 376 344 328 Q348 296 326 284 Q334 302 330 326 Q322 356 256 356')] },
+  { t: 'Vygumuj pomocné čáry.', erase: true, s: [] },
+  { t: 'Pruhy na čele, bocích a ocase.', s: [L('M186 84 Q190 98 188 106 M200 80 L200 102 M214 84 Q210 98 212 106 M124 230 Q138 236 146 230 M120 262 Q134 268 144 262 M121 294 Q134 300 144 294 M276 230 Q262 236 254 230 M280 262 Q266 268 256 262 M279 294 Q266 300 256 294 M300 372 Q304 362 300 352 M326 360 Q318 352 324 344')] },
+  { t: 'Vystínuj oči, nos a vnitřek oušek.', s: [S(CAT_EYE_L, 1), S(CAT_EYE_R, 1), S('M192 142 L208 142 L200 151 Z', 4), S('M160 66 L150 34 L180 58 Q168 60 160 66 Z', 3), S('M240 66 L250 34 L220 58 Q232 60 240 66 Z', 3)] },
+  { t: 'Stín pod bradou a mezi předníma nohama.', s: [S('M170 178 Q200 194 230 178 Q226 198 200 204 Q174 198 170 178 Z', 3), S('M176 290 Q200 300 224 290 L228 358 Q200 362 172 358 Z', 2)] },
+  { t: 'Pravý bok je ve stínu – vystínuj ho.', s: [S('M236 172 Q272 200 280 262 Q286 330 258 366 L246 360 Q264 300 254 230 Q246 196 226 180 Z', 2), S('M256 356 Q322 356 330 326 Q334 302 326 284 Q348 296 344 328 Q336 376 258 368 Z', 2)] },
+  { t: 'A nakonec stín na zemi.', s: [S(E(215, 389, 150, 8), 3)] },
+]};
+
+// --- realistic bird (great tit) ---
+const BIRD = 'M106 138 Q103 130 110 124 Q130 106 158 110 Q198 116 238 146 Q284 178 304 224 L300 244 Q284 262 250 268 Q190 270 150 240 Q116 210 110 168 L106 160';
+const WING = 'M170 168 Q230 150 296 214 Q262 238 214 232 Q178 214 170 168 Z';
+const R_PTACEK = { id: 'r-ptacek', name: 'Sýkorka', style: 'pencil', steps: [
+  { t: 'Slabě nakresli kruh na hlavu.', s: [G(C(142, 148, 40))] },
+  { t: 'Vedle šikmý ovál na tělo.', s: [G(L(ER(218, 200, 90, 58, 25)))] },
+  { t: 'Malý špičatý zobáček.', s: [L('M106 138 L78 150 L106 160')] },
+  { t: 'Obrys hlavy a těla podle pomocných tvarů.', s: [L(BIRD)] },
+  { t: 'Ocásek – dlouhý a rovný.', s: [L('M300 226 L372 250 L366 266 L296 244 M310 236 L368 258')] },
+  { t: 'Křídlo na boku.', s: [L(WING)] },
+  { t: 'Pírka na křídle – oblé čáry.', s: [L('M196 196 Q240 196 282 218 M206 214 Q244 218 270 228', { thin: true })] },
+  { t: 'Kulaté očko se světýlkem.', s: [C(132, 140, 7, { fill: 'ink', z: 1 }), C(129.5, 137.5, 2.2, { fill: 'white', z: 2 })] },
+  { t: 'Nožičky s prstíky.', s: [L('M200 266 L196 292 M228 266 L230 292 M184 297 L196 292 L206 298 M220 297 L230 292 L242 298')] },
+  { t: 'Větev pod nožičkami.', s: [L('M20 300 Q200 286 380 302 M20 318 Q200 304 380 320 M20 300 Q14 309 20 318 M300 300 Q326 266 352 254')] },
+  { t: 'Vygumuj pomocné tvary.', erase: true, s: [] },
+  { t: 'Sýkorka má černou čepičku. Vystínuj ji co nejtmavěji, kolem očka.', s: [S('M110 124 Q130 106 158 110 Q178 113 192 120 Q172 134 150 132 Q126 131 108 141 Z', 4)] },
+  { t: 'Černý proužek dolů po hrudi.', s: [S('M112 172 Q124 200 150 222 Q166 240 180 256 Q168 260 158 250 Q130 228 114 196 Z', 4)] },
+  { t: 'Křídlo vystínuj středně.', s: [S(WING, 2)] },
+  { t: 'Bříško jen jemně. Tvářičku nech bílou.', s: [S('M120 190 Q130 230 170 252 Q220 272 280 258 Q240 246 200 236 Q150 220 120 190 Z', 1)] },
+  { t: 'Spodní stranu větve vystínuj tmavě a přidej kůru.', s: [S('M20 312 Q200 298 380 314 L380 320 Q200 304 20 318 Z', 3), L('M60 306 l30 -2 M140 300 l24 -1 M250 300 l34 0 M330 306 l20 1', { thin: true })] },
+]};
+
+// --- realistic hedgehog ---
+const hedgeSpikes = (() => { let d = ''; const n = 34; for (let k = 0; k <= n; k++) { const a = (195 + 160 * k / n) * Math.PI / 180, b = a + 0.05; const bx = 215 + 135 * Math.cos(a), by = 255 + 95 * Math.sin(a), tx = 215 + 156 * Math.cos(b), ty = 255 + 112 * Math.sin(b); d += (k ? ' L' : 'M') + f1(bx) + ' ' + f1(by); if (k < n) d += ' L' + f1(tx) + ' ' + f1(ty); } return d; })();
+const hedgeInner = fur(7, 120, 215, 255, 135, 95, 0.2, 0.92, 3.3, 6.2, 22, 34, (x, y) => Math.atan2(y - 330, x - 230) + 0.45);
+const HEDGE_BODY = 'M85 230 A135 95 0 0 1 349.5 246.7 Q350 290 330 305 Q230 322 120 306 Q110 270 85 230 Z';
+const R_JEZEK = { id: 'r-jezek', name: 'Ježek', style: 'pencil', steps: [
+  { t: 'Slabě nakresli velký ovál – tělo.', s: [G(El(215, 255, 135, 95))] },
+  { t: 'Vlevo dole hlavu s dlouhým čumáčkem.', s: [L('M92 230 Q70 262 42 286 Q40 296 52 300 Q90 312 120 306')] },
+  { t: 'Čumáček na špičce a malé očko.', s: [C(45, 290, 7, { fill: 'ink' }), C(96, 262, 5.5, { fill: 'ink' }), C(94.5, 260.5, 1.8, { fill: 'white', z: 2 })] },
+  { t: 'Malé kulaté ouško.', s: [L('M112 244 Q120 230 132 244')] },
+  { t: 'Bodliny po okraji – zubatá čára, špičky míří dozadu.', s: [L(hedgeSpikes)] },
+  { t: 'Bříško a krátké nožičky.', s: [L('M120 306 Q230 322 330 305 Q350 290 349.5 247 M150 312 L146 330 L158 330 M185 316 L182 334 L194 334 M270 314 L272 332 L284 332 M300 310 L304 328 L314 328')] },
+  { t: 'Vygumuj ovál.', erase: true, s: [] },
+  { t: 'Bodliny i uvnitř těla. Všechny míří dozadu nahoru.', s: [L(hedgeInner, { thin: true, clip: HEDGE_BODY })] },
+  { t: 'Bodliny vystínuj.', s: [S(HEDGE_BODY, 2)] },
+  { t: 'Dole vzadu je stín – tam ještě tmavěji.', s: [S('M349.5 246.7 Q350 290 330 305 Q230 322 150 308 Q250 300 300 270 Q330 250 349.5 246.7 Z', 4)] },
+  { t: 'Pod čumáčkem jemný stín.', s: [S('M52 300 Q90 312 120 306 Q110 290 80 290 Q62 292 52 300 Z', 1)] },
+  { t: 'Zem a stín pod ježkem. Můžeš přidat lístek.', s: [S(E(220, 338, 150, 7), 2), L('M30 342 L380 342', { thin: true }), L('M330 350 Q350 330 378 336 Q362 356 330 350 Z M330 350 L378 336', { thin: true })] },
+]};
+
+// --- tree ---
+const CROWN = bumpy(200, 140, 165, 108, 24, 0.16, 11);
+const clusters = [[118, 160, 50], [200, 92, 58], [284, 156, 50], [165, 200, 46], [248, 204, 46]];
+const R_STROM = { id: 'r-strom', name: 'Strom', style: 'pencil', steps: [
+  { t: 'Slabě nakresli velký ovál na korunu.', s: [G(El(200, 140, 165, 108))] },
+  { t: 'Kmen – dvě mírně prohnuté čáry, dole se rozšiřují.', s: [L('M182 380 Q188 300 184 240 M220 380 Q214 300 222 240 M182 380 Q166 388 148 390 M220 380 Q236 388 256 390')] },
+  { t: 'Větve, které mizí v koruně.', s: [L('M184 252 Q170 238 148 230 M222 250 Q236 236 254 226')] },
+  { t: 'Obrys koruny – vlnitá čára podle oválu, jako obláček.', s: [L(CROWN)] },
+  { t: 'Uvnitř koruny pár oblouků – shluky listí.', s: [L(clusters.map(([x, y, r], i) => bumpy(x, y, r, r * 0.8, 5, 0.25, 20 + i, 0.25, Math.PI - 0.25, false)).join(' '), { clip: CROWN })] },
+  { t: 'Vygumuj ovál.', erase: true, s: [] },
+  { t: 'Celou korunu jemně vystínuj.', s: [S(CROWN, 1)] },
+  { t: 'Spodní pravé části shluků tmavěji. Světlo svítí zleva.', s: clusters.map(([x, y, r]) => S(crescent(x, y, r, Math.PI * 0.32, r * 0.5), 3, { clip: CROWN })) },
+  { t: 'Pravou stranu kmene vystínuj tmavě.', s: [S('M207 380 Q203 300 210 240 L222 240 Q214 300 220 380 Z', 3)] },
+  { t: 'Kůra – pár svislých čárek.', s: [L('M192 360 Q194 330 190 300 M200 340 Q202 310 198 280 M196 268 Q198 258 196 248', { thin: true })] },
+  { t: 'Tráva a stín pod stromem.', s: [S(E(232, 389, 120, 7), 2), L('M40 392 l4 -12 M52 392 l3 -9 M300 392 l3 -11 M314 392 l-2 -9 M340 392 l4 -10', { thin: true })] },
+]};
+
+// --- mountains with lake ---
+const LAKE = 'M20 260 L380 260 L380 325 Q200 345 20 330 Z';
+const R_HORY = { id: 'r-hory', name: 'Hory u jezera', style: 'pencil', steps: [
+  { t: 'Vodorovná čára přes celý papír – obzor.', s: [L('M20 260 L380 260')] },
+  { t: 'Velká hora – špičatý kopec.', s: [L('M40 260 L170 90 L300 260')] },
+  { t: 'Menší hora za ní. Kreslí se jen to, co je vidět.', s: [L('M249.5 194 L290 140 L380 230')] },
+  { t: 'Sníh na vrcholcích – zubatá čára.', s: [L('M139.4 130 L150 126 L160 138 L170 126 L180 136 L188 124 L200.6 130'), L('M271 165 L282 171 L290 161 L298 170 L304 160 L315 165')] },
+  { t: 'Břeh jezera dole.', s: [L('M20 330 Q200 345 380 325')] },
+  { t: 'Sluníčko a dva ptáci.', s: [C(334, 64, 20), L('M86 72 Q94 64 102 72 Q110 64 118 72 M128 48 Q134 42 140 48 Q146 42 152 48', { thin: true })] },
+  { t: 'Pravé strany hor jsou ve stínu. Vystínuj je tmavě.', s: [S('M200.6 130 L300 260 L215 260 Q196 190 180 136 L188 124 Z', 3), S('M315 165 L380 230 L380 260 L330 260 Q312 210 298 170 L304 160 Z', 3)] },
+  { t: 'Levé strany jen jemně. Sníh nech bílý.', s: [S('M40 260 L139.4 130 L150 126 L160 138 L170 126 L180 136 Q196 190 215 260 Z', 1), S('M249.5 194 L271 165 L282 171 L290 161 L298 170 Q312 210 330 260 L300 260 Z', 1)] },
+  { t: 'Hory se zrcadlí ve vodě – vzhůru nohama, jemně.', s: [S('M40 260 L170 430 L300 260 Z', 1, { clip: LAKE }), S('M200 260 L290 380 L380 290 L380 260 Z', 1, { clip: LAKE })] },
+  { t: 'Vlnky na vodě – krátké vodorovné čárky.', s: [L('M60 280 L110 280 M150 292 L230 292 M260 284 L330 284 M90 310 L150 310 M220 318 L300 316', { thin: true })] },
+  { t: 'Smrčky na břehu.', s: [L(pine(318, 372, 60) + ' ' + pine(356, 386, 72))] },
+  { t: 'Smrčky vystínuj tmavě a břeh jemně.', s: [S(pine(318, 372, 60), 3), S(pine(356, 386, 72), 3), S('M20 330 Q200 345 380 325 L380 398 L20 398 Z', 1)] },
+]};
+
+// --- tulip ---
+const TUL_FRONT = 'M200 224 Q170 204 176 150 Q184 118 200 102 Q216 118 224 150 Q230 204 200 224 Z';
+const R_TULIPAN = { id: 'r-tulipan', name: 'Tulipán', style: 'pencil', steps: [
+  { t: 'Stonek – dvě čáry těsně vedle sebe.', s: [L('M200 382 Q195 300 200 222 M206 382 Q201 300 206 222')] },
+  { t: 'Prostřední lístek květu – jako kapka vzhůru nohama.', s: [L(TUL_FRONT)] },
+  { t: 'Dva lístky po stranách. Zakulacené dole, nahoře do špičky.', s: [L('M200 222 Q148 214 150 152 Q150 122 162 98 Q186 136 196 150 M206 222 Q252 214 250 152 Q250 122 238 98 Q214 136 204 150')] },
+  { t: 'Dlouhé listy dole.', s: [L('M199 370 Q118 330 128 226 Q160 300 200 336 M205 350 Q276 312 272 236 Q248 304 206 326')] },
+  { t: 'Žilky – prostředkem listu a jemně v květu.', s: [L('M199 362 Q142 318 130 232 M204 346 Q262 304 271 240 M190 210 Q182 170 192 130 M210 210 Q218 170 208 130', { thin: true })] },
+  { t: 'Postranní lístky vystínuj – pravý víc, je dál od světla.', s: [S('M200 222 Q148 214 150 152 Q150 122 162 98 Q180 128 188 140 Q178 150 176 160 Q172 204 200 224 Z', 2), S('M206 222 Q252 214 250 152 Q250 122 238 98 Q220 128 212 140 Q222 150 224 160 Q228 204 200 224 Z', 3)] },
+  { t: 'Prostřední lístek jen vpravo a dole.', s: [S('M200 102 Q216 118 224 150 Q230 204 200 224 Q214 170 200 102 Z', 1), S('M180 196 Q200 206 220 196 Q220 214 200 224 Q180 214 180 196 Z', 2)] },
+  { t: 'Listy stínuj od žilky k jednomu kraji.', s: [S('M128 226 Q160 300 200 336 L199 362 Q142 318 128 226 Z', 2), S('M205 350 Q276 312 272 236 Q262 304 204 346 Z', 2)] },
+  { t: 'Stonek vpravo tmavě, dole zem a stín.', s: [S('M203 382 Q198 300 203 222 L206 222 Q201 300 206 382 Z', 3), L('M110 384 Q200 378 290 384', { thin: true }), S(E(224, 389, 80, 6), 2)] },
+]};
+
+// --- apple ---
+const APPLE = 'M200 112 Q162 82 122 100 Q72 128 82 208 Q94 288 158 304 Q184 312 200 300 Q216 312 242 304 Q306 288 318 208 Q328 128 278 100 Q238 82 200 112 Z';
+const R_JABLKO = { id: 'r-jablko', name: 'Jablko', style: 'pencil', steps: [
+  { t: 'Obrys jablka – nahoře a dole má důlek.', s: [L(APPLE)] },
+  { t: 'Důlek pro stopku.', s: [L('M172 110 Q200 132 228 110')] },
+  { t: 'Stopka a lístek.', s: [L('M198 118 Q194 88 206 66 L214 70 Q204 92 206 118'), L('M210 84 Q248 52 292 62 Q266 94 210 84 Z M212 84 Q252 72 288 63')] },
+  { t: 'Vlevo nahoře slabě ovál – odlesk. Tam nebude žádná tuha.', s: [G(El(140, 160, 20, 32))] },
+  { t: 'Celé jablko jemně vystínuj, odlesk vynech.', s: [S(APPLE + ' ' + E(140, 160, 20, 32), 1)] },
+  { t: 'Vpravo velký tmavý stín. U kraje nech užší světlejší proužek.', s: [S('M268 98 Q324 128 312 208 Q300 284 242 298 Q216 306 204 298 Q268 282 284 204 Q290 140 268 98 Z', 3)] },
+  { t: 'Důlek, stopku a spodek lístku vystínuj.', s: [S('M172 110 Q200 132 228 110 Q214 118 200 118 Q186 118 172 110 Z', 3), S('M198 118 Q194 88 206 66 L214 70 Q204 92 206 118 Z', 4), S('M210 84 Q252 72 288 63 Q266 94 210 84 Z', 2)] },
+  { t: 'Jemné proužky po slupce, shora dolů.', s: [L('M150 122 Q120 180 140 262 M180 126 Q166 190 176 282 M250 124 Q270 190 262 272', { thin: true })] },
+  { t: 'Vygumuj obrys odlesku a nakresli stín na stole.', erase: true, s: [S('M236 306 Q300 318 372 306 Q352 292 310 292 Q292 300 242 304 Z', 4)] },
+]};
+
+// --- mug ---
+const R_HRNEK = { id: 'r-hrnek', name: 'Hrnek', style: 'pencil', steps: [
+  { t: 'Nahoře široký ovál – okraj hrnku.', s: [El(180, 120, 90, 26)] },
+  { t: 'Uvnitř menší ovál – tloušťka hrnku.', s: [El(180, 121, 80, 20)] },
+  { t: 'Strany hrnku – dole se trochu zužují.', s: [L('M90 120 L100 300 M270 120 L260 300')] },
+  { t: 'Dno – oblouk, ne rovná čára. Hrnek je kulatý.', s: [L('M100 300 Q180 330 260 300')] },
+  { t: 'Ucho – dva oblouky.', s: [L('M268 158 Q342 150 340 210 Q338 266 262 264 M266 182 Q314 178 314 212 Q312 242 264 242')] },
+  { t: 'Na hrnek srdíčko.', s: [L('M150 212 Q140 200 132 210 Q128 222 150 238 Q172 222 168 210 Q160 200 150 212 Z')] },
+  { t: 'Uvnitř je tma. Vzadu tmavě, vpředu jemněji.', s: [S(E(180, 121, 80, 20), 2), S('M100 121 A80 20 0 0 1 260 121 Q180 128 100 121 Z', 4)] },
+  { t: 'Hrnek je kulatý: vpravo tmavý pruh, uprostřed jemný, vlevo nech světlo.', s: [S('M232 140 L270 120 L260 300 Q246 308 228 312 Z', 3), S('M172 146 L232 140 L228 312 L172 317 Z', 1)] },
+  { t: 'Ucho vystínuj a srdíčko vybarvi tmavě.', s: [S('M268 158 Q342 150 340 210 Q338 266 262 264 L264 242 Q312 242 314 212 Q314 178 266 182 Z', 2), S('M150 212 Q140 200 132 210 Q128 222 150 238 Q172 222 168 210 Q160 200 150 212 Z', 4)] },
+  { t: 'Stín na stole a pára z čaje.', s: [S('M250 306 Q330 318 386 300 Q362 286 330 290 Q300 290 262 302 Z', 3), L('M150 88 Q140 70 152 54 Q164 38 154 22 M190 84 Q180 66 192 50 Q204 34 194 18 M228 88 Q218 70 230 54', { thin: true })] },
+]};
+
+// --- house in perspective ---
+const R_DOMEK = { id: 'r-domek', name: 'Domek', style: 'pencil', steps: [
+  { t: 'Slabě vodorovná čára a na krajích dvě tečky. Tam se budou sbíhat čáry.', s: [G(L('M10 230 L390 230')), G(C(10, 230, 4)), G(C(390, 230, 4))] },
+  { t: 'Uprostřed svislá čára – roh domu.', s: [L('M170 150 L170 330')] },
+  { t: 'Z horního a dolního konce rohu slabě čáry k oběma tečkám.', s: [G(L('M170 150 L10 230 M170 330 L10 230 M170 150 L390 230 M170 330 L390 230'))] },
+  { t: 'Konce stěn – dvě kratší svislé čáry.', s: [L('M70 200 L70 267.5 M320 204.5 L320 261.8')] },
+  { t: 'Obtáhni horní a dolní okraj stěn podle pomocných čar.', s: [L('M70 200 L170 150 L320 204.5 M70 267.5 L170 330 L320 261.8')] },
+  { t: 'Štít střechy – trojúhelník nad levou stěnou.', s: [L('M70 200 L125 95 L170 150')] },
+  { t: 'Hřeben střechy a její zadní kraj.', s: [L('M125 95 L282 175 L320 204.5')] },
+  { t: 'Dveře na pravé stěně. Horní čára míří k pravé tečce.', s: [L('M210 311.8 L210 250 L245 246.1 L245 295.9')] },
+  { t: 'Okno na levé stěně a v něm křížek.', s: [L('M95 220.2 L140 215 L140 250 L95 243.1 Z'), L('M117.5 217.6 L117.5 246.6 M95 231.7 L140 232.5', { thin: true })] },
+  { t: 'Komín.', s: [L('M226 156 L226 124 L242 130 L242 164 M226 124 L234 120 L250 126 L242 130 M250 126 L250 167')] },
+  { t: 'Vygumuj pomocné čáry i tečky.', erase: true, s: [] },
+  { t: 'Řady tašek na střeše.', s: [L('M140 113.3 L294.7 184.8 M155 131.7 L307.3 194.7', { thin: true })] },
+  { t: 'Pravá stěna je ve stínu.', s: [S('M170 150 L320 204.5 L320 261.8 L170 330 Z', 2)] },
+  { t: 'Dveře a okno vystínuj tmavě.', s: [S('M210 311.8 L210 250 L245 246.1 L245 295.9 Z', 4), S('M95 220.2 L140 215 L140 250 L95 243.1 Z', 3)] },
+  { t: 'Střechu a komín jemně.', s: [S('M125 95 L282 175 L320 204.5 L170 150 Z', 1), S('M242 130 L250 126 L250 167 L242 164 Z', 3)] },
+  { t: 'Stín domu na zemi a tráva.', s: [S('M320 261.8 L170 330 L236 352 L392 282 Z', 3), L('M40 300 l4 -10 M54 304 l3 -9 M90 330 l4 -11 M300 360 l3 -10 M340 340 l4 -11', { thin: true })] },
+]};
+
+const SECTIONS = [
+  { id: 'lekce', name: 'Lekce', sub: 'Triky, které pak využiješ v obrázcích', items: [L_SRAF, L_KOULE, L_KRYCHLE, L_OKO, L_SRST] },
+  { id: 'zvirata', name: 'Zvířata', sub: 'Kreslená tužkou, se stíny', items: [R_KOCKA, R_PTACEK, R_JEZEK] },
+  { id: 'priroda', name: 'Příroda', sub: 'Stromy, hory a květiny', items: [R_STROM, R_HORY, R_TULIPAN] },
+  { id: 'veci', name: 'Věci', sub: 'Zátiší a domeček v perspektivě', items: [R_JABLKO, R_HRNEK, R_DOMEK] },
+  { id: 'kreslena', name: 'Kreslená zvířátka', sub: 'Na rozkreslení a vybarvování', items: ANIMALS },
+];
+ANIMALS.forEach(a => { if (a.level === 'lehke') a.open = true; });
+
+// ---- drawing engine ----
+const NS = 'http://www.w3.org/2000/svg';
+let uid = 0;
+function norm(s) {
+  if (!Array.isArray(s)) return s;
+  if (s[0] === 'c') return { d: E(s[1], s[2], s[3], s[3]), fill: s[4], z: s[5] || 0 };
+  if (s[0] === 'e') return { d: E(s[1], s[2], s[3], s[4]), fill: s[5], z: s[6] || 0 };
+  if (s[0] === 'h') return { d: s[1], shade: 1, z: s[2] || 0 };
+  return { d: s[1], fill: s[2], z: s[3] || 0 };
+}
+const ALL = [];
+SECTIONS.forEach(sec => sec.items.forEach((dr, idx) => {
+  dr.section = sec.id; dr.idx = idx;
+  dr.steps = dr.steps.map(st => Array.isArray(st) ? { t: st[0], s: st[1].map(norm) } : { ...st, s: st.s.map(norm) });
+  ALL.push(dr);
+}));
+const byId = Object.fromEntries(ALL.map(d => [d.id, d]));
+
+const RED = '#e5432f', OLD = '#3d4a56', GUIDE = '#8db8de', GRAPH = '#2b2b2b', HATCH = '#4a4a4a', INK = '#26323d';
+const TONES = { 1: [9, false], 2: [5.5, false], 3: [5.5, true], 4: [3.4, true] };
+
+function render(svg, dr, step) {
+  svg.textContent = '';
+  const N = dr.steps.length, fin = step >= N, pencil = dr.style === 'pencil';
+  const upto = fin ? N - 1 : step;
+  let eraseAt = -1;
+  for (let i = 0; i <= upto; i++) if (dr.steps[i].erase) eraseAt = i;
+  let items = [];
+  for (let i = 0; i <= upto; i++) for (const sh of dr.steps[i].s) {
+    if (sh.guide && (fin || i < eraseAt)) continue;
+    items.push({ sh, i, k: items.length });
+  }
+  if (fin && !pencil) items.sort((a, b) => (a.sh.z || 0) - (b.sh.z || 0) || a.k - b.k);
+  else items.sort((a, b) => (b.sh.shade ? 1 : 0) - (a.sh.shade ? 1 : 0) || (a.sh.z || 0) - (b.sh.z || 0) || a.k - b.k);
+
+  const id = 'g' + (++uid);
+  const defs = document.createElementNS(NS, 'defs');
+  svg.appendChild(defs);
+  const pats = {};
+  const pat = (color, tone) => {
+    const key = color + tone;
+    if (pats[key]) return pats[key];
+    const [gap, cross] = TONES[tone] || TONES[1];
+    const p = document.createElementNS(NS, 'pattern'), pid = id + 'p' + Object.keys(pats).length;
+    p.setAttribute('id', pid); p.setAttribute('patternUnits', 'userSpaceOnUse');
+    p.setAttribute('width', gap); p.setAttribute('height', gap); p.setAttribute('patternTransform', 'rotate(45)');
+    const lines = cross ? [[0, 0, 0, gap], [0, 0, gap, 0]] : [[0, 0, 0, gap]];
+    for (const [x1, y1, x2, y2] of lines) {
+      const ln = document.createElementNS(NS, 'line');
+      ln.setAttribute('x1', x1); ln.setAttribute('y1', y1); ln.setAttribute('x2', x2); ln.setAttribute('y2', y2);
+      ln.setAttribute('stroke', color); ln.setAttribute('stroke-width', tone >= 4 ? 1.9 : 1.5);
+      p.appendChild(ln);
+    }
+    defs.appendChild(p);
+    return pats[key] = `url(#${pid})`;
+  };
+  let clips = 0;
+  for (const { sh, i } of items) {
+    const el = document.createElementNS(NS, 'path');
+    el.setAttribute('d', sh.d);
+    el.setAttribute('fill-rule', 'evenodd');
+    el.setAttribute('stroke-linecap', 'round');
+    el.setAttribute('stroke-linejoin', 'round');
+    if (sh.clip) {
+      const cp = document.createElementNS(NS, 'clipPath'), cid = id + 'c' + (clips++);
+      cp.setAttribute('id', cid);
+      const cpp = document.createElementNS(NS, 'path'); cpp.setAttribute('d', sh.clip);
+      cp.appendChild(cpp); defs.appendChild(cp);
+      el.setAttribute('clip-path', `url(#${cid})`);
+    }
+    const isNew = !fin && i === step;
+    if (sh.shade) {
+      if (fin) {
+        el.setAttribute('fill', pencil ? pat(HATCH, sh.shade) : 'rgba(40,25,10,.22)');
+        el.setAttribute('stroke', 'none');
+      } else {
+        const col = isNew ? RED : OLD;
+        el.setAttribute('fill', pat(col, sh.shade));
+        el.setAttribute('stroke', col); el.setAttribute('stroke-width', 1.5); el.setAttribute('stroke-dasharray', '3 7');
+        if (!isNew) el.setAttribute('opacity', 0.55);
+      }
+    } else if (sh.guide) {
+      el.setAttribute('fill', 'none');
+      el.setAttribute('stroke', isNew ? RED : GUIDE);
+      el.setAttribute('stroke-width', isNew ? 3 : 2.5);
+      el.setAttribute('stroke-dasharray', '9 8');
+    } else {
+      const stroke = fin ? (pencil ? GRAPH : INK) : isNew ? RED : OLD;
+      let w = fin ? (pencil ? 2.6 : 4) : (pencil ? (isNew ? 5 : 3) : (isNew ? 6 : 4));
+      if (sh.thin) w *= 0.55;
+      el.setAttribute('stroke', stroke);
+      el.setAttribute('stroke-width', w);
+      const c = sh.fill;
+      el.setAttribute('fill', c === 'ink' ? (fin ? (pencil ? '#1f1f1f' : INK) : stroke) : c === 'white' ? '#fff' : fin && !pencil && c ? c : 'none');
+    }
+    svg.appendChild(el);
+  }
+}
+
+// ---- app ----
+const $ = id => document.getElementById(id);
+const STAR = '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.2 1.3-6.6L2.5 9.3l6.6-.8z"/></svg>';
+const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+
+// --- local photo store (fallback when the cloud store is not available) ---
+let idbP = null;
+function idb() {
+  if (!idbP) idbP = new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open('kresleni', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('photos');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    } catch (e) { rej(e); }
+  });
+  return idbP;
+}
+async function idbDo(mode, fn) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('photos', mode); const rq = fn(tx.objectStore('photos')); tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error); }); }
+
+// --- state ---
+let progress = ls.get('postup') || { done: {}, unlockAll: false };
+let localJournal = ls.get('denik') || [];
+let cloudJournal = [];
+let cloud = { db: null, assets: null };
+let writeQ = Promise.resolve();
+
+function saveProgress() {
+  ls.set('postup', progress);
+  if (cloud.db) {
+    const snap = JSON.parse(JSON.stringify(progress));
+    writeQ = writeQ.then(() => cloud.db.doc('stav/postup').set(snap)).catch(() => {});
+  }
+}
+const journal = () => [...cloudJournal, ...localJournal].sort((a, b) => b.at - a.at);
+const doneCount = () => Object.keys(progress.done).filter(id => byId[id]).length;
+
+function isUnlocked(dr) {
+  if (progress.unlockAll || dr.open || dr.idx === 0 || progress.done[dr.id]) return true;
+  const sec = SECTIONS.find(s => s.id === dr.section);
+  return !!progress.done[sec.items[dr.idx - 1].id];
+}
+
+const BADGES = [
+  { name: 'První obrázek', ok: () => doneCount() >= 1 },
+  { name: 'Pět obrázků', ok: () => doneCount() >= 5 },
+  { name: 'Fotografka', ok: () => journal().length >= 1 },
+  { name: 'Mistr stínů', ok: () => SECTIONS[0].items.every(d => progress.done[d.id]) },
+  { name: 'Deset obrázků', ok: () => doneCount() >= 10 },
+  { name: 'Všechno nakresleno', ok: () => ALL.every(d => progress.done[d.id]) },
+];
+
+// --- screens ---
+function go(name) { for (const s of ['home', 'draw', 'compare', 'journal']) $(s).hidden = s !== name; if (name === 'home') renderHome(); if (name === 'journal') renderJournal(); }
+
+function renderHome() {
+  $('stars').innerHTML = STAR + doneCount();
+  $('stars').setAttribute('aria-label', doneCount() + ' hvězdiček');
+  $('openJournal').textContent = 'Můj deník (' + journal().length + ')';
+  $('badges').innerHTML = BADGES.map(b => `<span class="badge${b.ok() ? ' on' : ''}"><span class="medal">${STAR}</span>${b.name}</span>`).join('');
+  const wrap = $('sections');
+  wrap.textContent = '';
+  for (const sec of SECTIONS) {
+    const s = document.createElement('div'); s.className = 'sec';
+    s.innerHTML = `<div class="sec-h"><h2>${sec.name}</h2><span>${sec.sub}</span></div>`;
+    const grid = document.createElement('div'); grid.className = 'grid';
+    for (const dr of sec.items) {
+      const open = isUnlocked(dr);
+      const b = document.createElement('button');
+      b.className = 'card' + (open ? '' : ' locked');
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 400 400'); svg.setAttribute('class', 'pic');
+      render(svg, dr, dr.steps.length);
+      b.appendChild(svg);
+      const n = document.createElement('span'); n.className = 'name'; n.textContent = dr.name;
+      const m = document.createElement('span'); m.className = 'meta';
+      m.textContent = open ? dr.steps.length + ' kroků' : 'Nejdřív nakresli: ' + sec.items[dr.idx - 1].name;
+      b.append(n, m);
+      if (progress.done[dr.id]) b.insertAdjacentHTML('beforeend', STAR.replace('class="star"', 'class="star done"'));
+      if (!open) b.insertAdjacentHTML('beforeend', `<span class="lock">${LOCK}</span>`);
+      b.addEventListener('click', () => open ? openDrawing(dr) : toast('Nejdřív nakresli: ' + sec.items[dr.idx - 1].name));
+      grid.appendChild(b);
+    }
+    s.appendChild(grid);
+    wrap.appendChild(s);
+  }
+}
+
+// --- drawing ---
+let cur = null, step = 0;
+function openDrawing(dr) {
+  cur = dr;
+  const saved = (ls.get('kroky') || {})[dr.id];
+  step = Number.isInteger(saved) && saved <= dr.steps.length ? saved : 0;
+  $('title').textContent = dr.name;
+  $('legend').hidden = dr.style !== 'pencil';
+  go('draw');
+  show();
+}
+function show() {
+  const N = cur.steps.length, fin = step >= N;
+  render($('canvas'), cur, step);
+  $('count').textContent = fin ? 'Hotovo!' : 'Krok ' + (step + 1) + ' z ' + N;
+  $('tip').textContent = fin
+    ? (cur.section === 'lekce' ? 'Výborně! Tenhle trik využiješ v dalších obrázcích. Vyfoť si ho do deníku.'
+      : cur.style === 'pencil' ? 'Hotovo! Vyfoť svůj obrázek a porovnej ho s předlohou.'
+      : 'Hotovo! Vybarvi si obrázek a pak ho vyfoť.')
+    : cur.steps[step].t;
+  $('swatch').hidden = fin;
+  const dots = $('dots'); dots.textContent = '';
+  for (let i = 0; i <= N; i++) { const d = document.createElement('span'); if (i < step) d.className = 'on'; if (i === step) d.className = 'cur'; dots.appendChild(d); }
+  $('prev').disabled = step === 0;
+  $('next').hidden = fin; $('snap').hidden = !fin; $('again').hidden = !fin;
+  $('next').textContent = step === N - 1 ? 'Hotovo ▶' : 'Další ▶';
+  const k = ls.get('kroky') || {}; k[cur.id] = step; ls.set('kroky', k);
+  if (fin && !progress.done[cur.id]) {
+    progress.done[cur.id] = Date.now();
+    saveProgress();
+    toast(STAR + ' Máš novou hvězdičku!', true);
+  }
+}
+$('next').addEventListener('click', () => { if (step < cur.steps.length) { step++; show(); } });
+$('prev').addEventListener('click', () => { if (step > 0) { step--; show(); } });
+$('again').addEventListener('click', () => { step = 0; show(); });
+$('back').addEventListener('click', () => go('home'));
+
+// --- photos ---
+async function shrink(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+    const max = 1400, s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+  } finally { URL.revokeObjectURL(url); }
+}
+async function storePhoto(blob) {
+  if (cloud.assets && cloud.db) {
+    try { const r = await cloud.assets.upload(blob, { type: 'image/jpeg' }); return { photo: r.id }; }
+    catch (e) { /* fall back to this device */ }
+  }
+  const key = 'p' + Date.now();
+  await idbDo('readwrite', st => st.put(blob, key));
+  return { local: key };
+}
+const urlCache = {};
+async function photoUrl(e) {
+  if (e.photo) return '/_blob/' + e.photo;
+  if (!e.local) return '';
+  if (urlCache[e.local]) return urlCache[e.local];
+  try { const b = await idbDo('readonly', st => st.get(e.local)); return b ? (urlCache[e.local] = URL.createObjectURL(b)) : ''; } catch (err) { return ''; }
+}
+async function addEntry(drawingId, file) {
+  $('busy').hidden = false;
+  try {
+    const blob = await shrink(file);
+    const where = await storePhoto(blob);
+    const entry = { drawingId, at: Date.now(), ...where };
+    if (where.photo) {
+      const ref = await cloud.db.collection('denik').add(entry);
+      entry._id = ref.id; entry.src = 'cloud';
+      if (!cloudJournal.some(x => x._id === ref.id)) cloudJournal.push(entry);
+    } else {
+      entry._id = where.local; entry.src = 'local';
+      localJournal.push(entry); ls.set('denik', localJournal.map(({ src, ...x }) => x));
+    }
+    return entry;
+  } finally { $('busy').hidden = true; }
+}
+async function replacePhoto(entry, file) {
+  $('busy').hidden = false;
+  try {
+    const blob = await shrink(file);
+    const where = await storePhoto(blob);
+    await removeEntry(entry);
+    const fresh = { drawingId: entry.drawingId, at: Date.now(), ...where };
+    if (where.photo) { const ref = await cloud.db.collection('denik').add(fresh); fresh._id = ref.id; fresh.src = 'cloud'; if (!cloudJournal.some(x => x._id === ref.id)) cloudJournal.push(fresh); }
+    else { fresh._id = where.local; fresh.src = 'local'; localJournal.push(fresh); ls.set('denik', localJournal.map(({ src, ...x }) => x)); }
+    return fresh;
+  } finally { $('busy').hidden = true; }
+}
+async function removeEntry(e) {
+  if (e.src === 'cloud') {
+    cloudJournal = cloudJournal.filter(x => x._id !== e._id);
+    try { await cloud.db.doc('denik/' + e._id).delete(); } catch (err) {}
+    if (e.photo && cloud.assets) { try { await cloud.assets.delete(e.photo); } catch (err) {} }
+  } else {
+    localJournal = localJournal.filter(x => x._id !== e._id);
+    ls.set('denik', localJournal.map(({ src, ...x }) => x));
+    try { await idbDo('readwrite', st => st.delete(e.local)); } catch (err) {}
+  }
+}
+
+$('photo').addEventListener('change', async ev => {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  try { const e = await addEntry(cur.id, f); openCompare(e, true); }
+  catch (err) { toast('Fotku se nepodařilo uložit. Zkus to znovu.'); }
+});
+
+// --- compare ---
+let cmpEntry = null, cmpFrom = 'draw', delArmed = 0;
+async function openCompare(e, fresh) {
+  cmpEntry = e; cmpFrom = fresh ? 'home' : 'journal';
+  const dr = byId[e.drawingId];
+  $('cmpTitle').textContent = dr ? dr.name : 'Obrázek';
+  if (dr) render($('cmpRef'), dr, dr.steps.length);
+  $('cmpNote').textContent = (fresh ? 'Uloženo do deníku. ' : '') + new Date(e.at).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })
+    + (e.src === 'local' ? ' · fotka je jen v tomhle zařízení' : '');
+  setMode('side');
+  resetDel();
+  go('compare');
+  $('cmpPhoto').src = await photoUrl(e);
+}
+function setMode(m) {
+  const over = m === 'over';
+  $('modeSide').setAttribute('aria-pressed', !over); $('modeOver').setAttribute('aria-pressed', over);
+  $('mix').hidden = !over;
+  $('cmpBody').classList.toggle('over', over);
+  $('frameRef').hidden = over;
+  const box = $('framePhoto').querySelector('.box');
+  $('framePhoto').querySelector('h3').textContent = over ? 'Předloha přes můj obrázek' : 'Můj obrázek';
+  const ref = $('cmpRef');
+  if (over) { box.appendChild(ref); ref.style.opacity = $('mix').value / 100; }
+  else { $('frameRef').querySelector('.box').appendChild(ref); ref.style.opacity = 1; }
+}
+$('modeSide').addEventListener('click', () => setMode('side'));
+$('modeOver').addEventListener('click', () => setMode('over'));
+$('mix').addEventListener('input', () => { $('cmpRef').style.opacity = $('mix').value / 100; });
+$('cmpBack').addEventListener('click', () => go(cmpFrom));
+function resetDel() { delArmed = 0; $('del').textContent = 'Smazat z deníku'; }
+$('del').addEventListener('click', async () => {
+  if (!delArmed) { delArmed = setTimeout(resetDel, 3000); $('del').textContent = 'Opravdu smazat? Klepni znovu'; return; }
+  clearTimeout(delArmed); resetDel();
+  await removeEntry(cmpEntry);
+  toast('Smazáno');
+  go('journal');
+});
+$('rephoto').addEventListener('change', async ev => {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f || !cmpEntry) return;
+  try { const e = await replacePhoto(cmpEntry, f); openCompare(e, false); }
+  catch (err) { toast('Fotku se nepodařilo uložit. Zkus to znovu.'); }
+});
+
+// --- journal ---
+async function renderJournal() {
+  const g = $('jgrid'); g.textContent = '';
+  const list = journal();
+  if (!list.length) {
+    g.innerHTML = '<div class="empty">Zatím tu nic není. Dokresli obrázek, vyfoť ho a objeví se tady vedle předlohy.</div>';
+  }
+  for (const e of list) {
+    const dr = byId[e.drawingId];
+    const b = document.createElement('button'); b.className = 'jcard';
+    const pair = document.createElement('div'); pair.className = 'pair';
+    const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 400 400');
+    if (dr) render(svg, dr, dr.steps.length);
+    const img = document.createElement('img'); img.alt = 'Fotka';
+    pair.append(svg, img);
+    b.appendChild(pair);
+    b.insertAdjacentHTML('beforeend', `<b></b><span>${new Date(e.at).toLocaleDateString('cs-CZ')}</span>`);
+    b.querySelector('b').textContent = dr ? dr.name : 'Obrázek';
+    b.addEventListener('click', () => openCompare(e, false));
+    g.appendChild(b);
+    photoUrl(e).then(u => { img.src = u; });
+  }
+  $('unlock').textContent = progress.unlockAll ? 'Pro rodiče: podrž pro zamčení podle postupu' : 'Pro rodiče: podrž 2 s pro odemčení všech obrázků';
+}
+$('openJournal').addEventListener('click', () => go('journal'));
+$('jBack').addEventListener('click', () => go('home'));
+let holdT = 0;
+const holdEnd = () => { clearTimeout(holdT); $('unlock').classList.remove('hold'); };
+$('unlock').addEventListener('pointerdown', () => {
+  $('unlock').classList.add('hold');
+  holdT = setTimeout(() => { holdEnd(); progress.unlockAll = !progress.unlockAll; saveProgress(); renderJournal(); toast(progress.unlockAll ? 'Všechny obrázky odemčené' : 'Obrázky se odemykají postupně'); }, 2000);
+});
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('unlock').addEventListener(ev, holdEnd));
+$('unlock').addEventListener('contextmenu', e => e.preventDefault());
+
+let toastT = 0;
+function toast(msg, html) {
+  const t = $('toast'); if (html) t.innerHTML = msg; else t.textContent = msg;
+  t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// --- cloud store (progress + journal shared across devices) ---
+function refresh() { if (!$('home').hidden) renderHome(); if (!$('journal').hidden) renderJournal(); }
+(async () => {
+  if (!window.claude || !window.claude.use) return;
+  try {
+    const [db, assets] = await Promise.all([claude.use('db'), claude.use('assets')]);
+    if (!db) return;
+    cloud = { db, assets };
+    let first = true;
+    db.doc('stav/postup').onSnapshot(snap => {
+      const remote = snap.exists ? snap.data() : { done: {}, unlockAll: false };
+      const merged = { done: { ...(remote.done || {}) }, unlockAll: !!remote.unlockAll };
+      let extra = false;
+      if (first) { for (const [k, v] of Object.entries(progress.done)) if (!merged.done[k]) { merged.done[k] = v; extra = true; } if (progress.unlockAll && !merged.unlockAll) { merged.unlockAll = true; extra = true; } first = false; }
+      progress = merged; ls.set('postup', progress);
+      if (extra) saveProgress();
+      refresh();
+    }, () => {});
+    db.collection('denik').onSnapshot(qs => {
+      cloudJournal = qs.docs.map(d => ({ ...d.data(), _id: d.id, src: 'cloud' }));
+      refresh();
+    }, () => {});
+  } catch (e) { /* stays on this device */ }
+})();
+
+renderHome();
+
+</script>
+</body>
+</html>
