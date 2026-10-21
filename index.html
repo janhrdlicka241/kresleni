@@ -231,6 +231,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     </div>
     <div class="jgrid" id="jgrid"></div>
     <button class="btn-soft parent" id="unlock"></button>
+    <p class="note">Verze 1.07</p>
   </section>
 </div>
 <div class="toast" id="toast"></div>
@@ -770,6 +771,7 @@ function render(svg, dr, step) {
       const c = sh.fill;
       el.setAttribute('fill', c === 'ink' ? (fin ? (pencil ? '#1f1f1f' : INK) : stroke) : c === 'white' ? '#fff' : fin && !pencil && c ? c : 'none');
     }
+    if (isNew) el.setAttribute('data-new', sh.shade ? 'shade' : sh.guide ? 'guide' : 'line');
     svg.appendChild(el);
   }
 }
@@ -884,6 +886,7 @@ function show() {
     : cur.steps[step].t;
   $('swatch').hidden = fin;
   if (voiceOn) speak($('tip').textContent);
+  if (!fin) animateStep($('canvas'));
   const dots = $('dots'); dots.textContent = '';
   for (let i = 0; i <= N; i++) { const d = document.createElement('span'); if (i < step) d.className = 'on'; if (i === step) d.className = 'cur'; dots.appendChild(d); }
   $('prev').disabled = step === 0;
@@ -899,7 +902,110 @@ function show() {
 $('next').addEventListener('click', () => { if (step < cur.steps.length) { step++; show(); } });
 $('prev').addEventListener('click', () => { if (step > 0) { step--; show(); } });
 $('again').addEventListener('click', () => { step = 0; show(); });
-$('back').addEventListener('click', () => { hush(); go('home'); });
+$('back').addEventListener('click', () => { hush(); animToken++; go('home'); });
+
+// --- pencil animation: new lines draw themselves, a pencil follows the tip ---
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let animToken = 0;
+function pencilEl() {
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('pointer-events', 'none');
+  g.innerHTML = '<g transform="rotate(-52) scale(1.15)">'
+    + '<rect x="2" y="-4" width="78" height="14" rx="3" fill="rgba(0,0,0,.12)"/>'
+    + '<path d="M0 0 L16 -7 L16 7 Z" fill="#f2d3a6" stroke="#8a6a3e" stroke-width="1"/>'
+    + '<path d="M0 0 L6 -2.6 L6 2.6 Z" fill="#333"/>'
+    + '<rect x="16" y="-7" width="48" height="14" fill="#ffc531" stroke="#c98f00" stroke-width="1"/>'
+    + '<path d="M16 -2.3 H64 M16 2.3 H64" stroke="#e0a800" stroke-width="1"/>'
+    + '<rect x="64" y="-7.5" width="7" height="15" fill="#b9c2ca" stroke="#7d8790" stroke-width="1"/>'
+    + '<rect x="71" y="-7" width="10" height="14" rx="3" fill="#f39aa9" stroke="#c46b7a" stroke-width="1"/></g>';
+  return g;
+}
+function animateStep(svg) {
+  const token = ++animToken;
+  const els = [...svg.querySelectorAll('[data-new]')];
+  if (!els.length || reduceMotion) return;
+  const MAX_PIECES = 10;
+  const jobs = [], instant = [];
+  for (const el of els) {
+    const kind = el.getAttribute('data-new');
+    if (kind === 'shade') {
+      const b = el.getBBox();
+      if (!b.width || !b.height) continue;
+      if (jobs.length >= MAX_PIECES) { el.style.opacity = 0; instant.push(el); continue; }
+      const cp = document.createElementNS(NS, 'clipPath'), cid = 'wipe' + token + '_' + jobs.length;
+      cp.setAttribute('id', cid);
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', b.x - 4); r.setAttribute('y', b.y - 4); r.setAttribute('height', b.height + 8); r.setAttribute('width', 0);
+      cp.appendChild(r); svg.querySelector('defs').appendChild(cp);
+      const g = document.createElementNS(NS, 'g'); g.setAttribute('clip-path', `url(#${cid})`);
+      el.replaceWith(g); g.appendChild(el);
+      jobs.push({ kind, el, b, r, ms: Math.min(2600, 1200 + (b.width + b.height) * 4) });
+      continue;
+    }
+    // every separate piece of the path gets drawn by the pencil, one after another
+    const d = el.getAttribute('d');
+    const parts = /m/.test(d) ? [d] : d.split(/(?=M)/).filter(x => x.trim());
+    const owner = { el, demos: [], left: 0 };
+    el.style.opacity = 0;
+    let anchor = el;
+    for (const part of parts) {
+      if (jobs.length >= MAX_PIECES) break;
+      const demo = el.cloneNode(false);
+      demo.removeAttribute('data-new'); demo.style.opacity = '';
+      demo.setAttribute('d', part);
+      anchor.after(demo); anchor = demo;
+      const len = demo.getTotalLength();
+      if (!len) { demo.remove(); continue; }
+      const fill = demo.getAttribute('fill');
+      if (fill && fill !== 'none') demo.setAttribute('fill', 'none');
+      demo.removeAttribute('stroke-dasharray');
+      demo.style.strokeDasharray = len + ' ' + len; demo.style.strokeDashoffset = len;
+      owner.demos.push(demo); owner.left++;
+      jobs.push({ kind, owner, demo, len, ms: Math.max(900, Math.min(4000, len * 6.5)) });
+    }
+    if (!owner.left) { el.style.opacity = ''; if (jobs.length >= MAX_PIECES) { el.style.opacity = 0; instant.push(el); } }
+  }
+  if (!jobs.length) { instant.forEach(e => e.style.opacity = ''); return; }
+  const total = jobs.reduce((t, j) => t + j.ms, 0), k = total > 15000 ? 15000 / total : 1;
+  jobs.forEach(j => j.ms *= k);
+  const pen = pencilEl(); svg.appendChild(pen);
+  let ji = 0, t0 = performance.now();
+  const finish = j => {
+    if (j.kind === 'shade') { j.r.setAttribute('width', j.b.width + 8); return; }
+    j.demo.style.strokeDashoffset = 0;
+    if (--j.owner.left <= 0) {
+      j.owner.demos.forEach(x => x.remove());
+      // pieces beyond the limit fade in with the rest of the shape
+      j.owner.el.style.transition = 'opacity .5s'; j.owner.el.style.opacity = '';
+    }
+  };
+  const place = (x, y) => pen.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+  const frame = now => {
+    if (token !== animToken || !svg.isConnected) { for (; ji < jobs.length; ji++) finish(jobs[ji]); instant.forEach(e => e.style.opacity = ''); pen.remove(); return; }
+    let j = jobs[ji], p = (now - t0) / j.ms;
+    while (p >= 1) {
+      finish(j); ji++; t0 = now;
+      if (ji >= jobs.length) {
+        instant.forEach(e => { e.style.transition = 'opacity .6s'; e.style.opacity = ''; });
+        pen.style.transition = 'opacity .5s'; pen.style.opacity = 0; setTimeout(() => pen.remove(), 550); return;
+      }
+      j = jobs[ji]; p = 0;
+    }
+    const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    if (j.kind === 'shade') {
+      const x = j.b.x + j.b.width * e, zig = Math.abs(((p * 7) % 2) - 1);
+      j.r.setAttribute('width', Math.max(0, x - j.b.x + 4));
+      place(x, j.b.y + j.b.height * zig);
+    } else {
+      const d = j.len * e;
+      j.demo.style.strokeDashoffset = j.len - d;
+      const pt = j.demo.getPointAtLength(d); place(pt.x, pt.y);
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+$('canvas').addEventListener('click', () => { if (cur && step < cur.steps.length) { render($('canvas'), cur, step); animateStep($('canvas')); } });
 
 // --- reading aloud (built-in Czech voice) ---
 const synth = window.speechSynthesis;
