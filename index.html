@@ -35,6 +35,8 @@ img { max-width: 100%; }
   --go-edge: #d99c00;
   --line: #b9d3e6;
   --gold: #f2a900;
+  --hint: #fff3c4;
+  --hint-edge: #e8cf6f;
   --display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
   --body: "Nunito", system-ui, sans-serif;
   color-scheme: light;
@@ -108,6 +110,11 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
 .voice { font-size: .95rem; padding: 8px 12px; }
 .voice[aria-pressed="false"] { color: var(--muted); }
 @media (max-width: 600px) { .voice { display: none; } }
+.trick-row { display: flex; }
+.trick { font-size: 1.05rem; }
+.trick svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.trick-text { margin: 0; background: var(--hint); border: 2px solid var(--hint-edge); border-radius: 16px; padding: 12px 14px; font-weight: 700; font-size: 1.15rem; line-height: 1.35; }
+.help-toggle[aria-pressed="false"] { color: var(--muted); }
 .tip .swatch { flex: none; width: 34px; height: 8px; border-radius: 4px; background: var(--new); }
 .stage { min-height: 0; min-width: 0; display: flex; justify-content: center; align-items: center; container-type: size; }
 .sheet { background: var(--sheet); border-radius: 24px; width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); box-shadow: 0 6px 0 var(--line); display: flex; }
@@ -174,6 +181,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     <div class="head">
       <h1>Kreslíme</h1>
       <span class="stars" id="stars"></span>
+      <button class="btn-soft help-toggle" id="helpToggle" aria-pressed="true"></button>
       <button class="btn-soft" id="openJournal"></button>
     </div>
     <div class="badges" id="badges"></div>
@@ -190,7 +198,9 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     <div class="stage"><div class="sheet"><svg id="canvas" viewBox="0 0 400 400"></svg></div></div>
     <div class="side foot">
       <div class="tip"><button class="say" id="say" aria-label="Přečíst nahlas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="w" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg></button><span class="swatch" id="swatch"></span><span id="tip"></span></div>
-      <div class="legend" id="legend"><span><i></i>slabě, pak vygumuj</span><span><i class="hatch"></i>stínuj tužkou</span></div>
+      <div class="trick-row"><button class="btn-soft trick" id="trick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>Trik</button></div>
+      <p class="trick-text" id="trickText" hidden></p>
+      <div class="legend" id="legend"><span id="legGuide"><i></i>slabě, pak vygumuj</span><span><i class="hatch"></i>stínuj tužkou</span></div>
       <div class="dots" id="dots"></div>
       <div class="nav">
         <button class="prev" id="prev">◀ Zpět</button>
@@ -231,7 +241,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     </div>
     <div class="jgrid" id="jgrid"></div>
     <button class="btn-soft parent" id="unlock"></button>
-    <p class="note">Verze 1.07</p>
+    <p class="note">Verze 1.12</p>
   </section>
 </div>
 <div class="toast" id="toast"></div>
@@ -397,8 +407,8 @@ HARD.forEach(a => { a.level = 'tezke'; ANIMALS.push(a); });
 // ---- realistic pencil drawings ----
 // shape objects: {d, fill?, z?, guide?, shade?: tone 1-4, clip?: d, thin?}
 const L = (d, o = {}) => ({ d, ...o });
-const C = (cx, cy, r, o = {}) => ({ d: E(cx, cy, r, r), ...o });
-const El = (cx, cy, rx, ry, o = {}) => ({ d: E(cx, cy, rx, ry), ...o });
+const C = (cx, cy, r, o = {}) => ({ d: E(cx, cy, r, r), ell: [cx, cy, r, r], ...o });
+const El = (cx, cy, rx, ry, o = {}) => ({ d: E(cx, cy, rx, ry), ell: [cx, cy, rx, ry], ...o });
 const G = sh => ({ ...sh, guide: true });
 const S = (d, tone = 1, o = {}) => ({ d, shade: tone, ...o });
 const R = (x, y, w, h) => `M${x} ${y} h${w} v${h} h${-w} Z`;
@@ -667,22 +677,533 @@ const R_DOMEK = { id: 'r-domek', name: 'Domek', style: 'pencil', steps: [
   { t: 'Stín domu na zemi a tráva.', s: [S('M320 261.8 L170 330 L236 352 L392 282 Z', 3), L('M40 300 l4 -10 M54 304 l3 -9 M90 330 l4 -11 M300 360 l3 -10 M340 340 l4 -11', { thin: true })] },
 ]};
 
+
+// ---- more lessons and pictures (1.10) ----
+const mirror = d => d.replace(/(-?\d+\.?\d*) (-?\d+\.?\d*)/g, (m, x, y) => `${f1(400 - +x)} ${y}`);
+function scales(x0, x1, y0, y1, w, h) {
+  let d = '', row = 0;
+  for (let y = y0; y <= y1; y += h, row++) for (let x = x0 + (row % 2 ? w / 2 : 0); x < x1; x += w) d += `M${f1(x)} ${f1(y)} Q${f1(x + w / 2)} ${f1(y + h * 1.3)} ${f1(x + w)} ${f1(y)} `;
+  return d;
+}
+function stipple(seed, n, cx, cy, rx, ry, dx, dy, pw) {
+  const r = rng(seed); let d = '', c = 0, guard = 0;
+  while (c < n && guard++ < n * 60) {
+    const a = r() * 6.283, f = Math.sqrt(r()), x = cx + rx * f * Math.cos(a), y = cy + ry * f * Math.sin(a);
+    const t = ((x - cx) / rx * dx + (y - cy) / ry * dy + 1) / 2;
+    if (r() < Math.pow(Math.max(0, t), pw)) { d += E(f1(x), f1(y), 1.5, 1.5) + ' '; c++; }
+  }
+  return d;
+}
+function petal(cx, cy, r0, r1, a, w) {
+  return `M${P(cx, cy, r0, a - w)} Q${P(cx, cy, (r0 + r1) / 2 + 6, a - w * 1.6)} ${P(cx, cy, r1, a)} Q${P(cx, cy, (r0 + r1) / 2 + 6, a + w * 1.6)} ${P(cx, cy, r0, a + w)}`;
+}
+
+// --- lesson: egg and light ---
+const EGG = 'M200 80 Q270 80 285 190 Q295 300 200 310 Q105 300 115 190 Q130 80 200 80 Z';
+const L_VAJICKO = { id: 'l-vajicko', name: 'Vajíčko a světlo', style: 'pencil', steps: [
+  { t: 'Nakresli vajíčko – nahoře užší, dole širší a kulatější.', s: [L(EGG)] },
+  { t: 'Vlevo nahoře slabě sluníčko. Odtud svítí světlo.', s: [G(L(E(50, 50, 16, 16) + ' ' + rays(50, 50, 22, 32, 8, 0)))] },
+  { t: 'Kam světlo svítí nejvíc, tam je odlesk. Slabě ho obkresli.', s: [G(El(165, 140, 16, 24))] },
+  { t: 'Celé vajíčko kromě odlesku jemně vystínuj.', s: [S(EGG + ' ' + E(165, 140, 16, 24), 1)] },
+  { t: 'Strana od sluníčka je ve stínu. Udělej tam tmavší pruh.', s: [S('M262 110 Q298 180 288 240 Q276 300 200 308 Q252 280 262 210 Q266 150 262 110 Z', 3)] },
+  { t: 'Stín na stole leží na druhé straně než sluníčko.', s: [S('M210 312 Q300 330 370 304 Q340 288 285 290 Q260 306 210 312 Z', 4)] },
+  { t: 'Vygumuj sluníčko a obrys odlesku.', erase: true, s: [] },
+]};
+
+// --- lesson: cylinder ---
+const L_VALEC = { id: 'l-valec', name: 'Válec', style: 'pencil', steps: [
+  { t: 'Nahoře ovál – víčko válce.', s: [El(200, 100, 80, 24)] },
+  { t: 'Dvě rovné svislé čáry dolů.', s: [L('M120 100 L120 300 M280 100 L280 300')] },
+  { t: 'Dole jen spodní polovina oválu – zadní část není vidět.', s: [L('M120 300 A80 24 0 0 0 280 300')] },
+  { t: 'Válec je kulatý, proto se stínuje v pruzích. Vpravo tmavý pruh.', s: [S('M240 120.8 L240 320.8 A80 24 0 0 0 280 300 L280 100 A80 24 0 0 1 240 120.8 Z', 3)] },
+  { t: 'Vedle něj jemnější pruh. Vlevo nech světlo.', s: [S('M175 122.8 L175 322.8 A80 24 0 0 0 240 320.8 L240 120.8 A80 24 0 0 1 175 122.8 Z', 1)] },
+  { t: 'Úplně u levého kraje ještě úzký jemný pruh – válec se tam otáčí od světla.', s: [S('M120 100 L120 300 A80 24 0 0 0 132 313 L132 113 A80 24 0 0 1 120 100 Z', 1)] },
+  { t: 'Stín válce na zemi vpravo.', s: [S('M262 316 Q330 332 388 306 Q362 286 280 294 Z', 4)] },
+]};
+
+// --- lesson: stippling ---
+const L_TECKY = { id: 'l-tecky', name: 'Tečkování', style: 'pencil', steps: [
+  { t: 'Nakresli kruh.', s: [C(200, 185, 100)] },
+  { t: 'Stínovat jde i tečkami! Vpravo dole jich udělej hodně, těsně u sebe.', s: [L(stipple(31, 170, 200, 185, 96, 96, 0.7, 0.7, 4), { fill: 'ink', thin: true })] },
+  { t: 'Doprostřed tečky řidčeji.', s: [L(stipple(32, 80, 200, 185, 96, 96, 0.7, 0.7, 1.2), { fill: 'ink', thin: true })] },
+  { t: 'Vlevo nahoře skoro žádné. Tam svítí světlo.', s: [] },
+  { t: 'Stín na zemi – hodně teček u sebe.', s: [L(stipple(33, 110, 228, 300, 100, 11, 0, 0, 0), { fill: 'ink', thin: true })] },
+]};
+
+// --- lesson: textures ---
+const BX = [[20, 'Dřevo'], [145, 'Cihly'], [270, 'Šupiny']];
+const BRICKS = (() => { let d = ''; for (let r = 1; r < 4; r++) d += `M145 ${140 + r * 27.5} L255 ${140 + r * 27.5} `; for (let r = 0; r < 4; r++) { const y0 = 140 + r * 27.5, xs = r % 2 ? [163, 200, 237] : [182, 219]; xs.forEach(x => d += `M${x} ${y0} L${x} ${y0 + 27.5} `); } return d; })();
+const L_TEXTURY = { id: 'l-textury', name: 'Textury', style: 'pencil', steps: [
+  { t: 'Nakresli tři čtverce vedle sebe.', s: [L(BX.map(([x]) => R(x, 140, 110, 110)).join(' '))] },
+  { t: 'Dřevo: vlnité čáry zleva doprava.', s: [L('M20 160 Q75 150 130 164 M20 182 Q60 176 66 196 Q70 214 130 206 M20 232 Q70 226 130 240 M88 140 Q100 150 130 146', { thin: true })] },
+  { t: 'Do dřeva suk – malý ovál a čáry kolem něj.', s: [El(82, 200, 13, 8), L('M58 186 Q82 176 106 188 M60 214 Q82 224 104 212', { thin: true })] },
+  { t: 'Cihly: vodorovné řady a v nich svislé čárky – každá řada posunutá.', s: [L(BRICKS)] },
+  { t: 'Šupiny: řady obloučků jako písmenko U. Další řada mezi nimi.', s: [L(scales(270, 380, 140, 240, 22, 16), { clip: R(270, 140, 110, 110), thin: true })] },
+  { t: 'Vystínuj pár cihel, aby nebyly všechny stejné.', s: [S(R(182, 140, 37, 27.5) + ' ' + R(145, 167.5, 18, 27.5) + ' ' + R(219, 195, 36, 27.5) + ' ' + R(163, 222.5, 37, 27.5), 2)] },
+  { t: 'U šupin vystínuj spodní půlku – vypadají kulatější.', s: [S(R(270, 196, 110, 54), 1)] },
+]};
+
+// --- lesson: road into the distance ---
+const tree = (x, y, s) => `M${x} ${y} L${x} ${f1(y - 40 * s)} ` + E(x, f1(y - 40 * s - 28 * s), f1(28 * s), f1(28 * s));
+const TREES_L = [[60, 360, 1], [110, 290, 0.6], [140, 245, 0.38], [160, 215, 0.24]];
+const L_CESTA = { id: 'l-cesta', name: 'Cesta do dálky', style: 'pencil', steps: [
+  { t: 'Vodorovná čára – obzor. Uprostřed slabě tečka: tam všechno mizí.', s: [L('M20 170 L380 170'), G(L(E(200, 170, 4, 4)))] },
+  { t: 'Kraje cesty – dvě čáry zdola přesně do tečky.', s: [L('M90 400 L200 170 L310 400')] },
+  { t: 'Prostředkem přerušovaná čára. Čím dál, tím kratší kousky.', s: [L('M200 392 L200 352 M200 326 L200 300 M200 282 L200 266 M200 254 L200 244 M200 236 L200 230 M200 224 L200 221')] },
+  { t: 'Vlevo velký strom dole. Slabě čáry od něj do tečky.', s: [L(tree(60, 360, 1)), G(L('M60 360 L200 170 M60 264 L200 170'))] },
+  { t: 'Další stromy směrem k tečce – každý menší. Vejdou se mezi pomocné čáry.', s: [L(TREES_L.slice(1).map(t => tree(...t)).join(' '))] },
+  { t: 'To samé na druhé straně cesty.', s: [L(TREES_L.map(([x, y, s]) => tree(400 - x, y, s)).join(' '))] },
+  { t: 'Kopce na obzoru.', s: [L('M20 170 Q80 135 150 170 M250 170 Q320 128 380 170')] },
+  { t: 'Vygumuj pomocné čáry.', erase: true, s: [] },
+  { t: 'Cestu jemně vystínuj.', s: [S('M90 400 L200 170 L310 400 Z', 1)] },
+  { t: 'Koruny stromů vpravo dole tmavěji.', s: TREES_L.flatMap(([x, y, s]) => [x, 400 - x].map(xx => S(crescent(xx, y - 40 * s - 28 * s, 28 * s, Math.PI / 4, 12 * s), 3))) },
+  { t: 'Tráva podél cesty.', s: [L('M30 392 l4 -12 M48 394 l3 -10 M330 392 l3 -12 M352 394 l-3 -10 M120 330 l3 -8 M286 334 l-3 -8', { thin: true })] },
+]};
+
+// --- butterfly ---
+const WING_UL = 'M192 160 Q120 70 60 100 Q30 150 80 200 Q130 215 192 200';
+const WING_LL = 'M192 205 Q120 210 95 260 Q100 310 150 300 Q185 280 194 235';
+const R_MOTYL = { id: 'r-motyl', name: 'Motýl', style: 'pencil', steps: [
+  { t: 'Slabě svislá čára. Motýl je na obou stranách stejný – zrcadlově.', s: [G(L('M200 60 L200 320'))] },
+  { t: 'Na čáru dlouhé tenké tělíčko.', s: [L(E(200, 210, 9, 66))] },
+  { t: 'Hlavička a dvě tykadla s kuličkami.', s: [L(E(200, 132, 13, 13)), L('M195 120 Q180 82 165 70 M205 120 Q220 82 235 70'), C(165, 68, 5, { fill: 'ink' }), C(235, 68, 5, { fill: 'ink' })] },
+  { t: 'Levé horní křídlo – velké, nahoru zakulacené.', s: [L(WING_UL)] },
+  { t: 'Pravé horní křídlo – stejné jako levé, jen obráceně.', s: [L(mirror(WING_UL))] },
+  { t: 'Levé spodní křídlo – menší.', s: [L(WING_LL)] },
+  { t: 'Pravé spodní křídlo.', s: [L(mirror(WING_LL))] },
+  { t: 'Žilky na křídlech – od tělíčka ven.', s: [L('M192 172 Q140 130 80 122 M192 186 Q140 176 90 188 M192 215 Q150 240 118 270 ' + mirror('M192 172 Q140 130 80 122 M192 186 Q140 176 90 188 M192 215 Q150 240 118 270'), { thin: true })] },
+  { t: 'Puntíky – na obou stranách na stejném místě.', s: [L(E(108, 150, 20, 20) + ' ' + E(292, 150, 20, 20) + ' ' + E(150, 182, 9, 9) + ' ' + E(250, 182, 9, 9) + ' ' + E(132, 272, 12, 12) + ' ' + E(268, 272, 12, 12))] },
+  { t: 'Vygumuj svislou čáru.', erase: true, s: [] },
+  { t: 'Horní křídla jemně vystínuj.', s: [S(WING_UL + ' Z', 1), S(mirror(WING_UL) + ' Z', 1)] },
+  { t: 'Spodní křídla tmavěji.', s: [S(WING_LL + ' Z', 2), S(mirror(WING_LL) + ' Z', 2)] },
+  { t: 'Puntíky a tělíčko úplně tmavě.', s: [S(E(108, 150, 20, 20) + ' ' + E(292, 150, 20, 20) + ' ' + E(132, 272, 12, 12) + ' ' + E(268, 272, 12, 12), 4), S(E(200, 210, 9, 66), 3)] },
+]};
+
+// --- fish with scales ---
+const FISH = 'M60 200 Q140 120 260 150 Q300 165 320 200 Q300 235 260 250 Q140 280 60 200 Z';
+const R_RYBA = { id: 'r-ryba', name: 'Ryba', style: 'pencil', steps: [
+  { t: 'Tělo ryby – jako šišatý list. Vlevo do špičky, tam bude pusa.', s: [L(FISH)] },
+  { t: 'Vzadu ocas.', s: [L('M318 200 L382 148 Q368 200 382 252 Z')] },
+  { t: 'Ploutve: velká nahoře, malé dole.', s: [L('M150 141 Q190 92 252 150 M200 255 Q220 290 240 250 M130 218 Q150 252 176 226')] },
+  { t: 'Žábry – oblouk za hlavou.', s: [L('M112 162 Q132 200 114 240')] },
+  { t: 'Oko: kolečko, uvnitř tmavá zornička a bílé světýlko.', s: [L(E(88, 190, 14, 14)), C(88, 190, 8, { fill: 'ink', z: 1 }), C(85, 187, 2.5, { fill: 'white', z: 2 }), L('M60 200 L76 205')] },
+  { t: 'Šupiny – řady malých obloučků. Další řada vždy mezi ně.', s: [L(scales(126, 300, 150, 250, 18, 13), { clip: FISH, thin: true })] },
+  { t: 'Čárky v ocase a ploutvích.', s: [L('M322 200 L372 164 M322 200 L376 200 M322 200 L372 236 M170 128 L178 146 M196 114 L200 145 M222 118 L220 148', { thin: true })] },
+  { t: 'Hřbet je tmavší. Vystínuj horní část těla.', s: [S('M60 200 Q140 120 260 150 Q300 165 320 200 Q240 178 150 180 Q90 186 60 200 Z', 2)] },
+  { t: 'Bříško jen jemně.', s: [S('M60 200 Q90 186 150 180 Q240 178 320 200 Q300 235 260 250 Q140 280 60 200 Z', 1)] },
+  { t: 'Ploutve a ocas středně.', s: [S('M318 200 L382 148 Q368 200 382 252 Z', 2), S('M150 141 Q190 92 252 150 Q200 136 150 141 Z', 2)] },
+  { t: 'Bublinky z pusy.', s: [L(E(40, 160, 8, 8) + ' ' + E(30, 125, 6, 6) + ' ' + E(42, 96, 4, 4))] },
+]};
+
+// --- toadstool ---
+const CAP = 'M90 200 Q100 90 200 85 Q300 90 310 200 Q200 222 90 200 Z';
+const SPOTS = [[150, 140, 14], [205, 112, 12], [258, 150, 16], [120, 180, 9], [202, 168, 10], [286, 186, 8]];
+const SPOTS_D = SPOTS.map(([x, y, r]) => E(x, y, r, r * 0.8)).join(' ');
+const R_HOUBA = { id: 'r-houba', name: 'Muchomůrka', style: 'pencil', steps: [
+  { t: 'Klobouk – velký oblouk a dole mírně prohnutá čára.', s: [L(CAP)] },
+  { t: 'Noha – dvě čáry dolů, dole se rozšiřuje.', s: [L('M165 206 Q158 300 150 350 M235 206 Q242 300 250 350 M150 350 Q200 358 250 350')] },
+  { t: 'Prstenec – sukýnka na noze.', s: [L('M162 240 Q200 262 238 240 Q235 258 200 268 Q165 258 162 240 Z')] },
+  { t: 'Lupeny pod kloboukem – krátké čárky.', s: [L('M112 203 L166 210 M134 206 L168 212 M288 203 L234 210 M266 206 L232 212', { thin: true })] },
+  { t: 'Puntíky na klobouku – různě velké.', s: [L(SPOTS_D)] },
+  { t: 'Klobouk vystínuj, puntíky nech bílé.', s: [S(CAP + ' ' + SPOTS_D, 2)] },
+  { t: 'Pravá strana klobouku ještě tmavší.', s: [S('M250 92 Q306 110 310 200 Q290 206 272 208 Q290 150 250 92 Z ' + SPOTS_D, 4)] },
+  { t: 'Pod kloboukem je na noze stín.', s: [S('M166 208 Q200 220 234 208 L235 226 Q200 238 165 226 Z', 3)] },
+  { t: 'Pravou stranu nohy vystínuj.', s: [S('M220 268 Q236 300 240 350 L250 350 Q242 300 236 250 Z', 2)] },
+  { t: 'Tráva a stín na zemi.', s: [S(E(212, 357, 95, 7), 3), L('M70 360 l5 -16 M86 362 l2 -12 M300 360 l-4 -15 M318 362 l3 -12 M120 362 l3 -9', { thin: true })] },
+]};
+
+// --- sunflower ---
+const SUN_PETALS = Array.from({ length: 16 }, (_, k) => petal(200, 150, 44, 98, k * Math.PI / 8, 0.13)).join(' ');
+const SUN_SEEDS = (() => { let d = ''; for (let k = -6; k <= 6; k++) { d += `M${120 + k * 12} 70 L${280 + k * 12} 230 M${280 - k * 12} 70 L${120 - k * 12} 230 `; } return d; })();
+const R_SLUNECNICE = { id: 'r-slunecnice', name: 'Slunečnice', style: 'pencil', steps: [
+  { t: 'Velký kruh – střed květu.', s: [C(200, 150, 44)] },
+  { t: 'Okvětní lístky kolem dokola. Začni nahoře, pak dole, vlevo a vpravo, pak mezi ně.', s: [L(SUN_PETALS)] },
+  { t: 'Semínka – šikmé čáry křížem přes střed.', s: [L(SUN_SEEDS, { clip: E(200, 150, 40, 40), thin: true })] },
+  { t: 'Stonek – dvě čáry dolů.', s: [L('M196 196 Q190 290 198 392 M206 196 Q200 290 208 392')] },
+  { t: 'Dva velké listy.', s: [L('M198 292 Q130 250 92 292 Q140 322 198 304 Z M206 330 Q276 296 306 330 Q262 362 206 346 Z')] },
+  { t: 'Žilky v listech.', s: [L('M198 298 Q150 290 100 292 M206 338 Q256 326 300 330', { thin: true })] },
+  { t: 'Střed vystínuj tmavě.', s: [S(E(200, 150, 44, 44), 3)] },
+  { t: 'Okvětní lístky jemně u středu.', s: [S(E(200, 150, 70, 70) + ' ' + E(200, 150, 44, 44), 1, { clip: SUN_PETALS })] },
+  { t: 'Spodní polovinu listů vystínuj.', s: [S('M92 292 Q140 322 198 304 L198 298 Q150 290 92 292 Z', 2), S('M306 330 Q262 362 206 346 L206 338 Q256 326 306 330 Z', 2)] },
+  { t: 'Stonek vpravo tmavěji.', s: [S('M202 196 Q196 290 204 392 L208 392 Q200 290 206 196 Z', 3)] },
+]};
+
+// --- cactus in a pot ---
+const CACTUS = 'M170 280 Q165 180 175 110 Q200 70 225 110 Q235 180 230 280';
+const ARMS = 'M172 222 Q130 226 125 182 Q122 150 140 150 Q152 152 150 182 Q150 202 172 202 M228 192 Q268 196 272 152 Q274 122 258 122 Q246 124 248 152 Q248 172 228 172';
+const SPINES = (() => { let d = ''; for (const [x0, y0, x1, y1] of [[186, 120, 185, 270], [214, 120, 215, 270], [200, 96, 200, 270]]) for (let t = 0.05; t < 1; t += 0.14) { const x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t; d += `M${f1(x - 5)} ${f1(y - 4)} L${f1(x)} ${f1(y)} L${f1(x + 5)} ${f1(y - 4)} `; } return d; })();
+const R_KAKTUS = { id: 'r-kaktus', name: 'Kaktus', style: 'pencil', steps: [
+  { t: 'Okraj květináče – dlouhý obdélník.', s: [L('M120 280 L280 280 L280 300 L120 300 Z')] },
+  { t: 'Květináč – dole užší.', s: [L('M130 300 L145 390 L255 390 L270 300')] },
+  { t: 'Kaktus – vysoký, nahoře zakulacený.', s: [L(CACTUS)] },
+  { t: 'Dvě ruce – každá jako písmeno U.', s: [L(ARMS)] },
+  { t: 'Žebra – tři prohnuté čáry shora dolů.', s: [L('M200 86 Q195 180 200 280 M186 100 Q180 190 185 280 M214 100 Q220 190 215 280', { thin: true })] },
+  { t: 'Bodliny – malé stříšky podél žeber.', s: [L(SPINES, { thin: true })] },
+  { t: 'Kvítek nahoře.', s: [L(petals(200, 78, 8, 18, 6, 0)), C(200, 78, 4, { fill: 'ink' })] },
+  { t: 'Pravou stranu kaktusu a pravou ruku vystínuj.', s: [S('M214 100 Q220 190 215 280 L230 280 Q235 180 225 110 Z', 2), S('M258 122 Q274 122 272 152 Q268 196 228 192 L228 182 Q262 180 262 150 Q262 128 258 122 Z', 2)] },
+  { t: 'Květináč vpravo tmavě a pod okrajem stín.', s: [S('M230 300 L270 300 L255 390 L222 390 Z', 3), S('M130 300 L270 300 L268 312 L132 312 Z', 2)] },
+  { t: 'Stín na stole.', s: [S('M255 390 Q320 396 372 384 Q340 372 262 376 Z', 4)] },
+]};
+
+// --- book ---
+const R_KNIHA = { id: 'r-kniha', name: 'Kniha', style: 'pencil', steps: [
+  { t: 'Vršek knihy – šikmý obdélník (kosodélník).', s: [L('M80 200 L250 150 L330 200 L160 260 Z')] },
+  { t: 'Ze tří předních rohů krátké čáry dolů – tloušťka knihy.', s: [L('M80 200 L80 232 M160 260 L160 292 M330 200 L330 232')] },
+  { t: 'Spoj je dole.', s: [L('M80 232 L160 292 L330 232')] },
+  { t: 'Stránky – tenké čáry podél boku.', s: [L('M166 268 L328 210 M166 276 L328 218 M166 284 L328 225', { thin: true })] },
+  { t: 'Na obálku rámeček na nápis.', s: [L('M138 200 L240 170 L282 196 L180 228 Z')] },
+  { t: 'Záložka, která vykukuje.', s: [L('M240 254 L244 304 L251 294 L258 304 L254 249')] },
+  { t: 'Hřbet vlevo vystínuj tmavě.', s: [S('M80 200 L80 232 L160 292 L160 260 Z', 3)] },
+  { t: 'Obálku jemně, rámeček nech světlý.', s: [S('M80 200 L250 150 L330 200 L160 260 Z M138 200 L240 170 L282 196 L180 228 Z', 1)] },
+  { t: 'Stín pod knihou.', s: [S('M160 292 L330 232 L372 248 L204 308 Z', 4)] },
+]};
+
+// --- hot air balloon ---
+const BALLOON = 'M200 60 Q300 60 300 160 Q300 230 240 270 L160 270 Q100 230 100 160 Q100 60 200 60 Z';
+const R_BALON = { id: 'r-balon', name: 'Balón', style: 'pencil', steps: [
+  { t: 'Balón – nahoře kulatý, dole se zužuje.', s: [L(BALLOON)] },
+  { t: 'Svislé dílce – čáry shora dolů, prohnuté podle balónu.', s: [L('M200 60 Q140 120 160 270 M200 60 L200 270 M200 60 Q260 120 240 270 M200 60 Q104 110 128 238 M200 60 Q296 110 272 238', { thin: true })] },
+  { t: 'Ozdobný pruh přes balón.', s: [L('M104 186 Q200 214 296 186 M108 202 Q200 230 292 202')] },
+  { t: 'Koš dole.', s: [L('M175 322 L225 322 L222 362 L178 362 Z')] },
+  { t: 'Lana od balónu ke koši.', s: [L('M166 270 L177 322 M234 270 L223 322 M200 270 L200 322', { thin: true })] },
+  { t: 'Proutí na koši – mřížka.', s: [L('M176 335 L224 335 M177 348 L223 348 M188 322 L189 362 M200 322 L200 362 M212 322 L211 362', { thin: true })] },
+  { t: 'Mráčky.', s: [L(bumpy(80, 336, 42, 16, 6, 0.35, 41)), L(bumpy(330, 92, 36, 14, 5, 0.35, 42))] },
+  { t: 'Pravou stranu balónu vystínuj.', s: [S(crescent(200, 160, 102, 0.25, 42), 2, { clip: BALLOON })] },
+  { t: 'Každý druhý dílec ještě jemně.', s: [S('M200 60 Q140 120 160 270 L200 270 Z M200 60 Q296 110 272 238 L240 270 Q260 120 200 60 Z', 1)] },
+  { t: 'Ozdobný pruh a koš tmavě.', s: [S('M104 186 Q200 214 296 186 L292 202 Q200 230 108 202 Z', 3), S('M175 322 L225 322 L222 362 L178 362 Z', 2)] },
+]};
+
+// ---- "Čárky a linky": pictures without circles, built from straight lines and short strokes (1.11) ----
+const U2 = (x, y) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
+const tanQ = (p0, p1, p2, t) => U2(2 * (1 - t) * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0]), 2 * (1 - t) * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1]));
+function barbs(p0, p1, p2, n, t0, t1, side, len, lean) {
+  let d = '';
+  for (let k = 0; k < n; k++) {
+    const t = t0 + (t1 - t0) * k / (n - 1), p = qpt(p0, p1, p2, t), [tx, ty] = tanQ(p0, p1, p2, t);
+    const [dx, dy] = U2((side > 0 ? ty : -ty) + tx * lean, (side > 0 ? -tx : tx) + ty * lean);
+    const L = typeof len === 'function' ? len(t) : len;
+    d += `M${f1(p[0])} ${f1(p[1])} L${f1(p[0] + dx * L)} ${f1(p[1] + dy * L)} `;
+  }
+  return d;
+}
+const rot = ([x, y], a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+const pt = (p, v, s) => `${f1(p[0] + v[0] * s)} ${f1(p[1] + v[1] * s)}`;
+
+// --- feather ---
+const F0 = [90, 340], F1 = [200, 220], F2 = [320, 70];
+const VANE = 'M118 300 Q80 240 140 180 Q200 110 318 68 Q290 180 236 250 Q180 310 118 300 Z';
+const R_PIRKO = { id: 'c-pirko', name: 'Pírko', style: 'pencil', steps: [
+  { t: 'Dlouhá prohnutá čára zdola nahoru – osa pírka.', s: [L('M90 340 Q200 220 320 70')] },
+  { t: 'Dole vedle ní druhá krátká čára – brk je tlustší.', s: [L('M97 345 L124 312')] },
+  { t: 'Horní okraj pírka – široký oblouk ke špičce.', s: [L('M118 300 Q80 240 140 180 Q200 110 318 68')] },
+  { t: 'Spodní okraj – užší.', s: [L('M118 300 Q180 310 236 250 Q290 180 318 68')] },
+  { t: 'A teď spousta šikmých čárek od osy k okraji. Všechny míří trochu ke špičce.', s: [L(barbs(F0, F1, F2, 30, 0.14, 0.95, 1, 90, 0.7), { clip: VANE, thin: true })] },
+  { t: 'To samé na druhé straně.', s: [L(barbs(F0, F1, F2, 30, 0.14, 0.95, -1, 90, 0.7), { clip: VANE, thin: true })] },
+  { t: 'Dole u brku pár volných chloupků – zatočené čárky.', s: [L('M116 302 q-16 -6 -26 4 M114 312 q-14 4 -14 18 M126 306 q4 14 20 16 M122 300 q-20 -16 -34 -10', { thin: true })] },
+  { t: 'Spodní polovinu pírka vystínuj.', s: [S('M118 300 Q180 310 236 250 Q290 180 318 68 Q200 220 116 310 Z', 2)] },
+  { t: 'Podél osy nahoře jemný stín.', s: [S('M116 310 Q200 220 318 68 Q190 200 140 262 Z', 1)] },
+]};
+
+// --- spruce ---
+const TIERS = [[40, 112, 42], [88, 170, 66], [136, 232, 90], [188, 296, 114], [244, 350, 138]];
+function tierPath(yt, yb, w) {
+  let d = `M200 ${yt} Q${f1(200 - w * 0.35)} ${f1(yt + (yb - yt) * 0.55)} ${200 - w} ${yb}`;
+  const n = Math.max(6, Math.round(w / 12));
+  for (let i = 1; i <= n; i++) { const x = 200 - w + 2 * w * i / n; d += ` L${f1(x - w / n)} ${yb - 12} L${f1(x)} ${yb}`; }
+  return d + ` Q${f1(200 + w * 0.35)} ${f1(yt + (yb - yt) * 0.55)} 200 ${yt} Z`;
+}
+function needles(seed, yt, yb, w, n) {
+  const r = rng(seed); let d = '';
+  for (let i = 0; i < n; i++) {
+    const y = yt + 12 + (yb - yt - 18) * r(), half = w * (y - yt) / (yb - yt) * 0.92, x = 200 + (r() * 2 - 1) * half, s = x < 200 ? -1 : 1, L = 8 + 5 * r();
+    d += `M${f1(x)} ${f1(y)} l${f1(s * L * 0.8)} ${f1(L * 0.6)} `;
+  }
+  return d;
+}
+const TREE_STAR = (() => { let d = ''; for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, r = k % 2 ? 7 : 17; d += (k ? ' L' : 'M') + P(200, 30, r, a); } return d + ' Z'; })();
+const R_JEDLICKA = { id: 'c-jedlicka', name: 'Jedlička', style: 'pencil', steps: [
+  { t: 'Slabě svislá čára uprostřed – podle ní budeš kreslit obě strany stejně.', s: [G(L('M200 40 L200 360'))] },
+  { t: 'Kmen dole – dvě krátké čáry.', s: [L('M193 350 L193 386 M207 350 L207 386')] },
+  { t: 'Nejvyšší patro větví – malá stříška se zoubky dole.', s: [L(tierPath(...TIERS[0]))] },
+  { t: 'Další patra pod ním. Každé je širší a zoubky dole se opakují.', s: TIERS.slice(1).map(t => L(tierPath(...t))) },
+  { t: 'Hvězda na špičku – rovné čáry tam a zpátky.', s: [L(TREE_STAR)] },
+  { t: 'Vygumuj pomocnou čáru.', erase: true, s: [] },
+  { t: 'Jehličí – spousta krátkých šikmých čárek. Míří dolů a ven.', s: TIERS.map((t, i) => L(needles(60 + i, ...t, 10 + i * 6), { clip: tierPath(...t), thin: true })) },
+  { t: 'Spodek každého patra vystínuj tmavě – je pod větvemi.', s: TIERS.map(([yt, yb, w]) => S(tierPath(yt, yb, w), 3, { clip: R(0, yb - 22, 400, 22) })) },
+  { t: 'Pravou polovinu stromku jemně.', s: TIERS.map(t => S(tierPath(...t), 1, { clip: R(200, 0, 200, 400) })) },
+  { t: 'Sníh na zemi a stín pod stromkem.', s: [L('M30 372 Q200 360 370 374'), S('M120 380 L320 380 L300 390 L140 390 Z', 2), L('M50 380 l6 -6 M80 384 l5 -5 M320 384 l6 -6 M350 380 l5 -5', { thin: true })] },
+]};
+
+// --- fern ---
+const K0 = [110, 385], K1 = [150, 230], K2 = [285, 60];
+function pinnae(side) {
+  let d = '', veins = '';
+  for (let k = 0; k < 13; k++) {
+    const t = 0.1 + 0.82 * k / 12 + (side > 0 ? 0 : 0.03), p = qpt(K0, K1, K2, t), [tx, ty] = tanQ(K0, K1, K2, t);
+    const dir = U2((side > 0 ? ty : -ty) + tx * 0.5, (side > 0 ? -tx : tx) + ty * 0.5), perp = [-dir[1], dir[0]];
+    const Lp = 80 * Math.pow(1 - t, 0.8) + 12, w = Lp * 0.2;
+    const q = [p[0] + dir[0] * Lp, p[1] + dir[1] * Lp], m = [p[0] + dir[0] * Lp * 0.45, p[1] + dir[1] * Lp * 0.45];
+    d += `M${f1(p[0])} ${f1(p[1])} Q${pt(m, perp, w)} ${f1(q[0])} ${f1(q[1])} Q${pt(m, perp, -w)} ${f1(p[0])} ${f1(p[1])} Z `;
+    veins += `M${f1(p[0])} ${f1(p[1])} L${pt(p, dir, Lp * 0.85)} `;
+  }
+  return [d, veins];
+}
+const [FERN_L, VEIN_L] = pinnae(1), [FERN_R, VEIN_R] = pinnae(-1);
+const R_KAPRADI = { id: 'c-kapradi', name: 'Kapradí', style: 'pencil', steps: [
+  { t: 'Dlouhý prohnutý stonek zdola nahoru.', s: [L('M110 385 Q150 230 285 60')] },
+  { t: 'Vedle něj druhá čára – stonek má tloušťku. Nahoře se spojí.', s: [L('M118 385 Q158 234 285 60')] },
+  { t: 'Lístky na jedné straně. Dole dlouhé, nahoru čím dál kratší.', s: [L(FERN_L)] },
+  { t: 'Lístky na druhé straně – trochu posunuté, ne přesně naproti.', s: [L(FERN_R)] },
+  { t: 'Do každého lístku krátkou čárku – žilku.', s: [L(VEIN_L + VEIN_R, { thin: true })] },
+  { t: 'Nahoře se kapradí stáčí – malá zatočená čárka.', s: [L('M285 60 q14 -8 8 -20 q-6 -8 -14 -2', { thin: true })] },
+  { t: 'Lístky na jedné straně vystínuj.', s: [S(FERN_R, 2)] },
+  { t: 'Druhou stranu jen jemně.', s: [S(FERN_L, 1)] },
+]};
+
+// --- snowflake ---
+const ARMS6 = Array.from({ length: 6 }, (_, k) => { const a = -Math.PI / 2 + k * Math.PI / 3; return [Math.cos(a), Math.sin(a)]; });
+const C0 = [200, 200];
+const SF = {
+  guides: [0, 1, 2].map(k => `M${pt(C0, ARMS6[k], 160)} L${pt(C0, ARMS6[k + 3], 160)}`).join(' '),
+  arms: ARMS6.map(v => `M${pt(C0, v, 26)} L${pt(C0, v, 150)}`).join(' '),
+  bigV: ARMS6.map(v => { const b = [C0[0] + v[0] * 96, C0[1] + v[1] * 96]; return `M${pt(b, rot(v, -0.7), 44)} L${f1(b[0])} ${f1(b[1])} L${pt(b, rot(v, 0.7), 44)}`; }).join(' '),
+  smallV: ARMS6.map(v => { const b = [C0[0] + v[0] * 52, C0[1] + v[1] * 52]; return `M${pt(b, rot(v, -0.9), 26)} L${f1(b[0])} ${f1(b[1])} L${pt(b, rot(v, 0.9), 26)}`; }).join(' '),
+  tips: ARMS6.map(v => { const c = [C0[0] + v[0] * 150, C0[1] + v[1] * 150], pp = [-v[1], v[0]]; return `M${pt(c, v, 14)} L${pt(c, pp, 8)} L${pt(c, v, -10)} L${pt(c, pp, -8)} Z`; }).join(' '),
+  hex: ARMS6.map((v, k) => (k ? 'L' : 'M') + pt(C0, v, 26)).join(' ') + ' Z',
+};
+const R_VLOCKA = { id: 'c-vlocka', name: 'Sněhová vločka', style: 'pencil', steps: [
+  { t: 'Slabě tři dlouhé čáry křížem přes střed – jako hvězdička se šesti cípy.', s: [G(L(SF.guides))] },
+  { t: 'Uprostřed šestiúhelník.', s: [L(SF.hex)] },
+  { t: 'Z rohů šestiúhelníku obtáhni šest ramen po pomocných čarách.', s: [L(SF.arms)] },
+  { t: 'Na každém rameni velké písmenko V – blíž ke konci.', s: [L(SF.bigV)] },
+  { t: 'Blíž ke středu malé V.', s: [L(SF.smallV)] },
+  { t: 'Na konce ramen malé kosočtverečky.', s: [L(SF.tips)] },
+  { t: 'Vygumuj pomocné čáry.', erase: true, s: [] },
+  { t: 'Šestiúhelník a kosočtverečky vystínuj.', s: [S(SF.hex, 2), S(SF.tips, 3)] },
+]};
+
+// --- spider web ---
+const WEB_C = [200, 185];
+const SPOKES = (() => { const r = rng(77); return Array.from({ length: 10 }, (_, k) => { const a = -Math.PI / 2 + k * Math.PI / 5 + (r() - 0.5) * 0.25; return { a, len: 150 + r() * 25 }; }); })();
+const spokeEnd = (s, f = 1) => [WEB_C[0] + Math.cos(s.a) * s.len * f, WEB_C[1] + Math.sin(s.a) * s.len * f];
+const WEB = {
+  frame: SPOKES.map((s, k) => (k ? 'L' : 'M') + f1(spokeEnd(s)[0]) + ' ' + f1(spokeEnd(s)[1])).join(' ') + ' Z',
+  spokes: SPOKES.map(s => `M${WEB_C[0]} ${WEB_C[1]} L${f1(spokeEnd(s)[0])} ${f1(spokeEnd(s)[1])}`).join(' '),
+  ring: f => { let d = ''; SPOKES.forEach((s, k) => { const a = spokeEnd(s, f), b = spokeEnd(SPOKES[(k + 1) % 10], f), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], c = [WEB_C[0] + (m[0] - WEB_C[0]) * 0.86, WEB_C[1] + (m[1] - WEB_C[1]) * 0.86]; d += (k ? '' : `M${f1(a[0])} ${f1(a[1])}`) + ` Q${f1(c[0])} ${f1(c[1])} ${f1(b[0])} ${f1(b[1])}`; }); return d; },
+};
+const W_TOP = spokeEnd(SPOKES[0]), W_LFT = spokeEnd(SPOKES[7]), W_RGT = spokeEnd(SPOKES[3]);
+const R_PAVUCINA = { id: 'c-pavucina', name: 'Pavučina', style: 'pencil', steps: [
+  { t: 'Nahoře větvička – dvě čáry vedle sebe.', s: [L('M0 14 Q140 8 260 22 L300 12 M0 24 Q140 18 258 30')] },
+  { t: 'Okraj pavučiny – rovné čáry dokola, jako mnohoúhelník.', s: [L(WEB.frame)] },
+  { t: 'Úchyty: od okraje k větvičce a ke krajům papíru.', s: [L(`M${f1(W_TOP[0])} ${f1(W_TOP[1])} L${f1(W_TOP[0] + 6)} 22 M${f1(W_LFT[0])} ${f1(W_LFT[1])} L0 ${f1(W_LFT[1] - 30)} M${f1(W_RGT[0])} ${f1(W_RGT[1])} L400 ${f1(W_RGT[1] + 20)}`)] },
+  { t: 'Paprsky – rovné čáry ze středu do každého rohu.', s: [L(WEB.spokes)] },
+  { t: 'Kolem středu první malé kolo. Každý kousek se trochu prohne dovnitř.', s: [L(WEB.ring(0.14))] },
+  { t: 'Další kola – pořád dál od středu, mezery stejné.', s: [0.26, 0.38, 0.5, 0.62, 0.74, 0.86].map(f => L(WEB.ring(f), { thin: true })) },
+  { t: 'Pavouček – tečka a osm nožiček z krátkých čárek.', s: [L('M200 185 L200 232', { thin: true }), C(200, 240, 7, { fill: 'ink' }), L('M194 236 l-12 -8 l-4 -8 M193 240 l-14 -2 l-6 -6 M194 244 l-12 6 l-4 8 M196 246 l-8 10 l0 8 M206 236 l12 -8 l4 -8 M207 240 l14 -2 l6 -6 M206 244 l12 6 l4 8 M204 246 l8 10 l0 8', { thin: true })] },
+  { t: 'Větvičku vystínuj.', s: [S('M0 14 Q140 8 260 22 L258 30 Q140 18 0 24 Z', 3)] },
+]};
+
+// --- sailboat ---
+const WAVES = (() => { let d = ''; const r = rng(91); for (let row = 0; row < 5; row++) for (let i = 0; i < 6; i++) { const x = 30 + i * 60 + (row % 2) * 30 + r() * 10, y = 300 + row * 18; d += `M${f1(x)} ${y} q8 -6 16 0 q8 -6 16 0 `; } return d; })();
+const R_LOD = { id: 'c-lod', name: 'Plachetnice', style: 'pencil', steps: [
+  { t: 'Loďka – dole užší, nahoře rovná.', s: [L('M90 280 L310 280 L280 318 L120 318 Z')] },
+  { t: 'Stěžeň – dlouhá rovná čára nahoru.', s: [L('M200 70 L200 280')] },
+  { t: 'Velká plachta vpravo – trojúhelník.', s: [L('M206 82 L206 270 L310 270 Z')] },
+  { t: 'Menší plachta vlevo.', s: [L('M194 104 L194 270 L112 270 Z')] },
+  { t: 'Vlajka na špičce.', s: [L('M200 70 L232 80 L200 90')] },
+  { t: 'Prkna na loďce – dvě vodorovné čáry.', s: [L('M100 292 L300 292 M112 305 L290 305', { thin: true })] },
+  { t: 'Vlnky – spousta malých obloučků v řadách.', s: [L(WAVES, { thin: true })] },
+  { t: 'Racci a sluneční paprsky v rohu.', s: [L('M60 80 q8 -8 16 0 q8 -8 16 0 M110 56 q6 -6 12 0 q6 -6 12 0'), L([1.75, 2.0, 2.25, 2.5, 2.75].map(a => `M${P(390, 10, 30, a)} L${P(390, 10, 75, a)}`).join(' '), { thin: true })] },
+  { t: 'Loďku vystínuj tmavě.', s: [S('M90 280 L310 280 L280 318 L120 318 Z', 3)] },
+  { t: 'Malou plachtu jemně, u velké jen kraj u stěžně.', s: [S('M194 104 L194 270 L112 270 Z', 1), S('M206 82 L206 270 L240 270 Z', 1)] },
+  { t: 'Odraz loďky ve vodě – svislé čárky pod ní.', s: [L('M130 326 l0 14 M150 324 l0 20 M170 326 l0 12 M190 324 l0 22 M210 326 l0 14 M230 324 l0 20 M250 326 l0 12 M270 324 l0 16', { thin: true })] },
+]};
+
+// --- castle tower ---
+const TOWER_TOP = 'M130 120 L130 88 L150 88 L150 104 L170 104 L170 88 L190 88 L190 104 L210 104 L210 88 L230 88 L230 104 L250 104 L250 88 L270 88 L270 120 Z';
+const DOOR = 'M178 360 L178 300 Q200 268 222 300 L222 360 Z';
+const SLITS = R(193, 160, 14, 40) + ' ' + R(158, 222, 10, 30) + ' ' + R(232, 222, 10, 30);
+const STONES = (() => { const r = rng(55); let d = ''; const spots = [[146, 132], [220, 136], [150, 176], [228, 180], [146, 270], [236, 266], [150, 318], [232, 320], [170, 140], [212, 250], [168, 254]]; spots.forEach(([x, y]) => d += R(x + Math.round(r() * 4), y, 20, 10) + ' '); return d; })();
+const R_HRAD = { id: 'c-hrad', name: 'Hradní věž', style: 'pencil', steps: [
+  { t: 'Dvě dlouhé svislé čáry – stěny věže.', s: [L('M140 120 L140 360 M260 120 L260 360')] },
+  { t: 'Nahoře cimbuří – zuby jako na hradě. Rovné čáry nahoru, doprava, dolů…', s: [L(TOWER_TOP)] },
+  { t: 'Dole země.', s: [L('M20 362 Q200 350 380 366')] },
+  { t: 'Dveře – nahoře do špičky.', s: [L(DOOR)] },
+  { t: 'Prkna na dveřích – svislé čárky.', s: [L('M190 290 L190 360 M200 284 L200 360 M210 290 L210 360', { thin: true })] },
+  { t: 'Úzká okénka – střílny.', s: [L(SLITS)] },
+  { t: 'Kameny ve zdi – malé obdélníčky, ne všude.', s: [L(STONES, { thin: true })] },
+  { t: 'Stožár a vlajka nahoře.', s: [L('M200 88 L200 38 M200 38 L238 48 L200 58')] },
+  { t: 'Dveře a okénka úplně tmavě.', s: [S(DOOR, 4), S(SLITS, 4)] },
+  { t: 'Pravou stranu věže vystínuj.', s: [S('M226 120 L260 120 L260 360 L226 360 Z', 2), S('M250 88 L270 88 L270 120 L250 120 Z', 2)] },
+  { t: 'Tráva u věže – krátké čárky nahoru.', s: [L('M40 366 l3 -12 M54 366 l-2 -10 M100 360 l3 -12 M290 362 l3 -12 M312 364 l-2 -10 M350 366 l3 -12', { thin: true })] },
+]};
+
+// --- fence with grass ---
+const PX = [50, 95, 140, 185, 230, 275, 320];
+const picket = x => `M${x} 362 L${x} 210 L${x + 15} 188 L${x + 30} 210 L${x + 30} 362`;
+const RAILS = [[20, 50], ...PX.slice(0, -1).map(x => [x + 30, x + 45]), [350, 380]].map(([a, b]) => R(a, 236, b - a, 14) + ' ' + R(a, 310, b - a, 14)).join(' ');
+const GRASS = (() => { const r = rng(12); let d = ''; for (let i = 0; i < 70; i++) { const x = 20 + r() * 360, h = 10 + r() * 22, lean = (r() - 0.5) * 12; d += `M${f1(x)} 372 l${f1(lean)} ${f1(-h)} `; } return d; })();
+const GRAIN = PX.map(x => `M${x + 9} 230 l1 26 M${x + 18} 270 l1 30 M${x + 12} 320 l0 22`).join(' ');
+const R_PLOT = { id: 'c-plot', name: 'Plot a tráva', style: 'pencil', steps: [
+  { t: 'Země – dlouhá čára.', s: [L('M20 362 L380 362')] },
+  { t: 'První plaňka – dvě svislé čáry, nahoře špička.', s: [L(picket(PX[0]))] },
+  { t: 'Další plaňky vedle sebe. Mezery stejně široké.', s: PX.slice(1).map(x => L(picket(x))) },
+  { t: 'Prkna vzadu – jen kousky v mezerách mezi plaňkami.', s: [L(RAILS)] },
+  { t: 'Letokruhy dřeva – krátké svislé čárky na plaňkách.', s: [L(GRAIN, { thin: true })] },
+  { t: 'Hřebíčky – malé křížky tam, kde plaňka drží na prkně.', s: [L(PX.map(x => `M${x + 12} 240 l6 6 M${x + 18} 240 l-6 6 M${x + 12} 314 l6 6 M${x + 18} 314 l-6 6`).join(' '), { thin: true })] },
+  { t: 'Pravý kraj každé plaňky vystínuj.', s: PX.map(x => S(`M${x + 20} 200 L${x + 30} 210 L${x + 30} 362 L${x + 20} 362 Z`, 2)) },
+  { t: 'Prkna vzadu jsou ve stínu – tmavě.', s: [S(RAILS, 3)] },
+  { t: 'Tráva vpředu – hodně krátkých čárek nahoru, každá trochu jinak nakloněná.', s: [L(GRASS, { thin: true })] },
+  { t: 'Kytičky z čárek – stonek a hvězdička.', s: [L('M80 372 L82 330 M290 372 L286 336 M200 372 L202 344'), L(rays(82, 326, 0, 10, 6, 0) + ' ' + rays(286, 332, 0, 10, 6, 0.3) + ' ' + rays(202, 340, 0, 9, 6, 0.2), { thin: true })] },
+]};
+
 const SECTIONS = [
-  { id: 'lekce', name: 'Lekce', sub: 'Triky, které pak využiješ v obrázcích', items: [L_SRAF, L_KOULE, L_KRYCHLE, L_OKO, L_SRST] },
-  { id: 'zvirata', name: 'Zvířata', sub: 'Kreslená tužkou, se stíny', items: [R_KOCKA, R_PTACEK, R_JEZEK] },
-  { id: 'priroda', name: 'Příroda', sub: 'Stromy, hory a květiny', items: [R_STROM, R_HORY, R_TULIPAN] },
-  { id: 'veci', name: 'Věci', sub: 'Zátiší a domeček v perspektivě', items: [R_JABLKO, R_HRNEK, R_DOMEK] },
+  { id: 'lekce', name: 'Lekce', sub: 'Stínování a triky, které pak využiješ v obrázcích', items: [L_SRAF, L_KOULE, L_VAJICKO, L_VALEC, L_KRYCHLE, L_TECKY, L_TEXTURY, L_CESTA, L_OKO, L_SRST] },
+  { id: 'zvirata', name: 'Zvířata', sub: 'Kreslená tužkou, se stíny', items: [R_KOCKA, R_MOTYL, R_PTACEK, R_RYBA, R_JEZEK] },
+  { id: 'priroda', name: 'Příroda', sub: 'Stromy, hory a květiny', items: [R_STROM, R_HOUBA, R_SLUNECNICE, R_HORY, R_TULIPAN, R_KAKTUS] },
+  { id: 'veci', name: 'Věci', sub: 'Zátiší a perspektiva', items: [R_JABLKO, R_KNIHA, R_HRNEK, R_BALON, R_DOMEK] },
+  { id: 'carky', name: 'Čárky a linky', sub: 'Bez kruhů – rovné čáry a spousta malých čárek', items: [R_PLOT, R_PIRKO, R_VLOCKA, R_JEDLICKA, R_HRAD, R_KAPRADI, R_LOD, R_PAVUCINA] },
   { id: 'kreslena', name: 'Kreslená zvířátka', sub: 'Na rozkreslení a vybarvování', items: ANIMALS },
 ];
 ANIMALS.forEach(a => { if (a.level === 'lehke') a.open = true; });
+
+// ---- help steps for children (1.12): construction shapes, dots to connect, frames, centre lines, spacing marks ----
+// Steps marked help:true are left out in "Bez pomoci" mode; tNo is the step text used then.
+const H = (t, shapes, tip) => ({ t, s: shapes.map(sh => ({ ...sh, guide: true })), help: true, ...(tip ? { tip } : {}) });
+const KD = pts => pts.map(([x, y]) => ({ d: E(x, y, 4.5, 4.5), guide: true, dot: true }));
+const ERASE = (t = 'Vygumuj pomocné čáry a tečky.') => ({ t, erase: true, s: [], help: true });
+const stepAt = (dr, start) => { const i = dr.steps.findIndex(st => st.t.startsWith(start)); if (i < 0) throw new Error(dr.id + ': ' + start); return i; };
+const ins = (dr, before, ...steps) => dr.steps.splice(stepAt(dr, before), 0, ...steps);
+const retext = (dr, start, t) => { const st = dr.steps[stepAt(dr, start)]; st.tNo = st.t; st.t = t; };
+const tip = (dr, start, text) => { dr.steps[stepAt(dr, start)].tip = text; };
+
+// --- Věci ---
+ins(R_JABLKO, 'Obrys jablka',
+  H('Slabě svislá čára – střed jablka.', [L('M200 60 L200 330')]),
+  H('Dva ovály vedle sebe, trochu přes sebe. Jablko je jako dva kopečky.', [El(158, 200, 80, 100), El(242, 200, 80, 100)]));
+retext(R_JABLKO, 'Obrys jablka', 'Obtáhni obrys kolem obou oválů. Nahoře a dole na střední čáře udělej důlek.');
+tip(R_JABLKO, 'Obtáhni obrys', 'Kresli jednu půlku jablka a pak druhou. Začni vždy nahoře u důlku.');
+
+ins(R_HRNEK, 'Nahoře široký ovál', H('Slabě obdélník – do něj se celý hrnek vejde.', [L(R(90, 94, 180, 232))]));
+ins(R_HRNEK, 'Ucho', H('Ucho je jako písmeno C. Dvě tečky: kde začne a kde skončí.', KD([[268, 158], [262, 264]])));
+ins(R_HRNEK, 'Uvnitř je tma', ERASE('Vygumuj pomocný obdélník a tečky.'));
+
+ins(R_KNIHA, 'Vršek knihy', H('Nejdřív 4 tečky – rohy vršku knihy.', KD([[80, 200], [250, 150], [330, 200], [160, 260]])));
+retext(R_KNIHA, 'Vršek knihy', 'Spoj tečky rovnými čarami – vršek knihy.');
+ins(R_KNIHA, 'Hřbet vlevo', ERASE());
+
+ins(R_BALON, 'Balón',
+  H('Slabě kruh na horní část balónu.', [C(200, 155, 98)]),
+  H('Pod něj slabě trojúhelník – jako kornout zmrzliny.', [L('M104 175 L200 292 L296 175')]));
+retext(R_BALON, 'Balón', 'Obtáhni balón: nahoře po kruhu, dole po kornoutu. Špička se usekne rovně.');
+ins(R_BALON, 'Pravou stranu balónu', ERASE());
+
+// --- Příroda ---
+ins(R_TULIPAN, 'Stonek', H('Slabě svislá čára – střed květiny.', [L('M200 86 L200 392')]));
+ins(R_TULIPAN, 'Prostřední lístek', H('Slabě vajíčko – do něj se vejde celý květ.', [El(200, 162, 52, 64)]));
+ins(R_TULIPAN, 'Postranní lístky', ERASE());
+
+ins(R_HORY, 'Velká hora', H('Udělej tečky: kde hory začínají, kde mají špičku a kde končí.', KD([[40, 260], [170, 90], [300, 260], [249.5, 194], [290, 140], [380, 230]])));
+retext(R_HORY, 'Velká hora', 'Spoj tečky – velká hora.');
+retext(R_HORY, 'Menší hora', 'Spoj další tečky – menší hora za ní. Kreslí se jen to, co je vidět.');
+ins(R_HORY, 'Pravé strany hor', ERASE('Vygumuj tečky.'));
+
+ins(R_HOUBA, 'Klobouk', H('5 teček do půlkruhu – kudy půjde klobouk.', KD([[90, 200], [122, 122], [200, 90], [278, 122], [310, 200]])));
+retext(R_HOUBA, 'Klobouk', 'Spoj tečky velkým obloukem. Dole klobouk uzavři mírně prohnutou čárou.');
+ins(R_HOUBA, 'Noha', H('Slabě obdélník pod klobouk – tam bude noha.', [L(R(155, 206, 90, 146))]));
+ins(R_HOUBA, 'Klobouk vystínuj', ERASE());
+
+ins(R_SLUNECNICE, 'Okvětní lístky', H('Slabě 8 teček dokola – tam budou špičky lístků. Mezi ně pak přidáš další.', KD(Array.from({ length: 8 }, (_, k) => [200 + 98 * Math.cos(k * Math.PI / 4), 150 + 98 * Math.sin(k * Math.PI / 4)]))));
+ins(R_SLUNECNICE, 'Střed vystínuj', ERASE());
+
+ins(R_KAKTUS, 'Okraj květináče', H('Slabě svislá čára – střed kaktusu.', [L('M200 60 L200 392')]));
+ins(R_KAKTUS, 'Dvě ruce', H('Tečky: kde ruka začne a kde má špičku.', KD([[172, 222], [125, 160], [228, 192], [272, 132]])));
+retext(R_KAKTUS, 'Dvě ruce', 'Od tečky u těla obloukem nahoru k tečce – každá ruka jako písmeno U.');
+ins(R_KAKTUS, 'Pravou stranu kaktusu', ERASE());
+
+// --- Zvířata ---
+ins(R_MOTYL, 'Na čáru dlouhé', H('Slabě velké X přes střed. Horní křídla leží v horních rozích, spodní v dolních.', [L('M60 70 L340 330 M340 70 L60 330')]));
+retext(R_MOTYL, 'Vygumuj svislou čáru', 'Vygumuj pomocné čáry.');
+
+ins(R_RYBA, 'Tělo ryby', H('Slabě dlouhý ovál – tělo ryby.', [El(190, 205, 130, 56)]));
+retext(R_RYBA, 'Tělo ryby', 'Obtáhni tělo podle oválu. Vlevo ho zašpičatěj – tam bude pusa.');
+ins(R_RYBA, 'Vzadu ocas', H('Tři tečky na ocas.', KD([[318, 200], [382, 148], [382, 252]])));
+retext(R_RYBA, 'Vzadu ocas', 'Spoj tečky – ocas.');
+const FISH_GRID = (() => { let d = ''; for (let k = -12; k <= 12; k++) d += `M${110 + k * 18} 140 L${230 + k * 18} 260 M${230 - k * 18 + 100} 140 L${110 - k * 18 + 100} 260 `; return d; })();
+ins(R_RYBA, 'Šupiny', H('Slabě šikmá mřížka přes tělo. Do jejích políček pak nakreslíš obloučky.', [L(FISH_GRID, { clip: FISH })]));
+ins(R_RYBA, 'Hřbet je tmavší', ERASE());
+
+const ER_DOTS = (cx, cy, rx, ry, deg) => { const a = deg * Math.PI / 180; return KD(Array.from({ length: 8 }, (_, k) => { const t = k * Math.PI / 4; return [cx + rx * Math.cos(t) * Math.cos(a) - ry * Math.sin(t) * Math.sin(a), cy + rx * Math.cos(t) * Math.sin(a) + ry * Math.sin(t) * Math.cos(a)]; })); };
+ins(R_PTACEK, 'Vedle šikmý ovál', H('8 teček do šikmého oválu – kudy půjde tělo.', ER_DOTS(218, 200, 90, 58, 25)));
+retext(R_PTACEK, 'Vedle šikmý ovál', 'Spoj tečky slabým šikmým oválem – tělo.');
+
+// --- Čárky a linky ---
+ins(R_PIRKO, 'Dlouhá prohnutá čára', H('Slabě tvar listu – takový tvar bude mít celé pírko.', [L(VANE)]));
+const FEATHER_TICKS = (() => { let d = ''; for (let t = 0.2; t < 0.96; t += 0.1) { const p = qpt(F0, F1, F2, t), [tx, ty] = tanQ(F0, F1, F2, t); d += `M${pt(p, [ty, -tx], 7)} L${pt(p, [-ty, tx], 7)} `; } return d; })();
+ins(R_PIRKO, 'A teď spousta', H('Na ose si udělej čárky v pravidelných mezerách – podle nich povedou čárky pírka.', [L(FEATHER_TICKS)]));
+ins(R_PIRKO, 'Spodní polovinu pírka', ERASE());
+
+ins(R_JEDLICKA, 'Kmen dole', H('Slabě velký trojúhelník – do něj se celý stromek vejde.', [L('M200 22 L56 352 L344 352 Z')]));
+
+ins(R_HRAD, 'Nahoře cimbuří', H('Nahoře tečky v pravidelných mezerách – tam budou kraje zubů.', KD([130, 150, 170, 190, 210, 230, 250, 270].map(x => [x, 104]))));
+ins(R_HRAD, 'Dveře a okénka', ERASE());
+
+ins(R_PLOT, 'První plaňka',
+  H('Na zem si udělej tečky – kde začíná a končí každá plaňka.', KD(PX.flatMap(x => [[x, 362], [x + 30, 362]]))),
+  H('Slabě vodorovná čára – sem až sahají plaňky, pak začne špička.', [L('M20 210 L380 210')]));
+ins(R_PLOT, 'Pravý kraj každé plaňky', ERASE());
+
+const FERN_TIPS = side => Array.from({ length: 13 }, (_, k) => {
+  const t = 0.1 + 0.82 * k / 12 + (side > 0 ? 0 : 0.03), p = qpt(K0, K1, K2, t), [tx, ty] = tanQ(K0, K1, K2, t);
+  const dir = U2((side > 0 ? ty : -ty) + tx * 0.5, (side > 0 ? -tx : tx) + ty * 0.5), Lp = 80 * Math.pow(1 - t, 0.8) + 12;
+  return [p[0] + dir[0] * Lp, p[1] + dir[1] * Lp];
+});
+const FERN_ENV = 'M110 385 ' + FERN_TIPS(1).map(p => `L${f1(p[0])} ${f1(p[1])}`).join(' ') + ' L285 60 ' + FERN_TIPS(-1).reverse().map(p => `L${f1(p[0])} ${f1(p[1])}`).join(' ') + ' Z';
+ins(R_KAPRADI, 'Lístky na jedné straně', H('Slabě obrys celého listu – dole široký, nahoře úzký. Lístky pak dosáhnou až k němu.', [L(FERN_ENV)]));
+ins(R_KAPRADI, 'Lístky na jedné straně vystínuj', ERASE());
+
+ins(R_LOD, 'Velká plachta', H('Tři tečky – rohy velké plachty.', KD([[206, 82], [206, 270], [310, 270]])));
+retext(R_LOD, 'Velká plachta', 'Spoj tečky – velká plachta.');
+ins(R_LOD, 'Menší plachta', H('Tři tečky – rohy malé plachty.', KD([[194, 104], [194, 270], [112, 270]])));
+retext(R_LOD, 'Menší plachta', 'Spoj tečky – malá plachta.');
+ins(R_LOD, 'Loďku vystínuj', ERASE('Vygumuj tečky.'));
+
+ins(R_PAVUCINA, 'Kolem středu první', H('Na každém paprsku slabě 3 tečky ve stejných vzdálenostech. Podle nich povedou kola.', KD(SPOKES.flatMap(s => [0.26, 0.5, 0.74].map(f => spokeEnd(s, f))))));
+ins(R_PAVUCINA, 'Větvičku vystínuj', ERASE('Vygumuj tečky.'));
+
+// --- Lekce ---
+ins(L_VAJICKO, 'Nakresli vajíčko',
+  H('Slabě velký kruh – spodek vajíčka.', [C(200, 222, 88)]),
+  H('Nad ním menší kruh, trochu přes ten velký.', [C(200, 142, 62)]));
+retext(L_VAJICKO, 'Nakresli vajíčko', 'Obtáhni vajíčko kolem obou kruhů – nahoře užší, dole širší.');
+
+ins(L_KRYCHLE, 'Nakresli kosočtverec', H('Nejdřív 7 teček – rohy krychle.', KD([[200, 90], [310, 140], [200, 190], [90, 140], [90, 270], [200, 320], [310, 270]])));
+retext(L_KRYCHLE, 'Nakresli kosočtverec', 'Spoj horní 4 tečky – kosočtverec, vršek krychle.');
+retext(L_KRYCHLE, 'Ze tří spodních', 'Ze tří předních rohů rovné čáry dolů k tečkám.');
+ins(L_KRYCHLE, 'Světlo svítí zleva', ERASE('Vygumuj tečky.'));
+
+ins(L_OKO, 'Horní víčko', H('Tečky: dva koutky oka, nejvyšší místo horního víčka a nejnižší dolního.', KD([[70, 205], [330, 190], [190, 150], [205, 236]])));
+
+ins(L_TEXTURY, 'Cihly', H('Na krajích prostředního čtverce tečky – rozdělí ho na 4 stejné pruhy.', KD([167.5, 195, 222.5].flatMap(y => [[145, y], [255, y]]))));
+ins(L_TEXTURY, 'Šupiny', H('Slabě vodorovné linky – po nich povedou řady šupin.', [L([156, 172, 188, 204, 220, 236].map(y => `M270 ${y} L380 ${y}`).join(' '))]));
+ins(L_TEXTURY, 'Vystínuj pár cihel', ERASE());
+
+// --- tricks for specific steps ---
+tip(R_KOCKA, 'Obrys hlavy', 'Kresli z ucha dolů ke bradě, pak druhou stranu. Obě strany mají být stejné.');
+tip(R_HORY, 'Spoj tečky – velká hora', 'Dívej se na tečku, kam čára má dojít, ne na špičku tužky.');
+tip(R_LOD, 'Stěžeň', 'Rovnou čáru udělej rychle jedním tahem. Pomalá čára se klepe.');
+tip(R_PLOT, 'Tráva vpředu', 'Každou čárku dělej švihem zdola nahoru – pak je dole silnější a nahoře tenká.');
+tip(R_PIRKO, 'A teď spousta', 'Čárky dělej rychle a všechny stejným směrem.');
+tip(L_SRAF, 'Do čtvrtého', 'Nejdřív všechny čárky jedním směrem, pak teprve druhým.');
+tip(L_KOULE, 'Vpravo dole', 'Přitlač víc u kraje srpku a k odlesku povoluj.');
 
 // ---- drawing engine ----
 const NS = 'http://www.w3.org/2000/svg';
 let uid = 0;
 function norm(s) {
   if (!Array.isArray(s)) return s;
-  if (s[0] === 'c') return { d: E(s[1], s[2], s[3], s[3]), fill: s[4], z: s[5] || 0 };
-  if (s[0] === 'e') return { d: E(s[1], s[2], s[3], s[4]), fill: s[5], z: s[6] || 0 };
+  if (s[0] === 'c') return { d: E(s[1], s[2], s[3], s[3]), ell: [s[1], s[2], s[3], s[3]], fill: s[4], z: s[5] || 0 };
+  if (s[0] === 'e') return { d: E(s[1], s[2], s[3], s[4]), ell: [s[1], s[2], s[3], s[4]], fill: s[5], z: s[6] || 0 };
   if (s[0] === 'h') return { d: s[1], shade: 1, z: s[2] || 0 };
   return { d: s[1], fill: s[2], z: s[3] || 0 };
 }
@@ -690,9 +1211,40 @@ const ALL = [];
 SECTIONS.forEach(sec => sec.items.forEach((dr, idx) => {
   dr.section = sec.id; dr.idx = idx;
   dr.steps = dr.steps.map(st => Array.isArray(st) ? { t: st[0], s: st[1].map(norm) } : { ...st, s: st.s.map(norm) });
+  // helper for big circles and ovals: first 8 dots around, then join them with arcs
+  dr.steps = dr.steps.flatMap(st => {
+    const big = st.s.filter(sh => sh.ell && !sh.shade && !sh.clip && Math.max(sh.ell[2], sh.ell[3]) >= 40);
+    if (!big.length) return [st];
+    const dots = big.flatMap(sh => {
+      const [cx, cy, rx, ry] = sh.ell;
+      return Array.from({ length: 8 }, (_, k) => { const a = k * Math.PI / 4 - Math.PI / 2; return { d: E(cx + rx * Math.cos(a), cy + ry * Math.sin(a), 4.5, 4.5), guide: true, dot: true }; });
+    });
+    const shape = big.every(sh => Math.abs(sh.ell[2] - sh.ell[3]) < 4) ? 'kruh' : 'ovál';
+    return [
+      { t: `Nejdřív si slabě udělej 8 teček dokola, kudy půjde ${shape}: nahoře, dole, po stranách a šikmo mezi nimi.`, s: dots, help: true, tip: 'Tečky dělej malé a slabé. Naproti sobě mají být stejně daleko od středu.' },
+      { ...st, tNo: st.tNo || st.t, t: 'Teď tečky spoj oblými obloučky. ' + st.t, tip: st.tip || 'Spojuj vždy jen dvě sousední tečky malým obloučkem. Papír si klidně pootoč.' },
+    ];
+  });
+  dr.steps.forEach(st => { if ((st.s.length && st.s.every(sh => sh.guide)) || (st.erase && !st.s.length)) st.help = true; });
   ALL.push(dr);
 }));
 const byId = Object.fromEntries(ALL.map(d => [d.id, d]));
+// the same drawing without help steps and guide lines ("Bez pomoci")
+function viewOf(dr, help) {
+  if (help) return dr;
+  return { ...dr, steps: dr.steps.filter(st => !st.help).map(st => ({ ...st, t: st.tNo || st.t, erase: false, s: st.s.filter(sh => !sh.guide) })) };
+}
+function trickFor(st) {
+  if (st.tip) return st.tip;
+  const s = st.s;
+  if (s.some(sh => sh.dot)) return 'Tečky dělej malé a slabé, ať je pak můžeš vygumovat.';
+  if (s.length && s.every(sh => sh.guide)) return 'Pomocné čáry kresli úplně slabounce, skoro nepřitlačuj. Na konci je vygumuješ.';
+  if (st.erase) return 'Gumuj jemně a jedním směrem, ať se papír nezmačká.';
+  if (s.some(sh => sh.shade)) return 'Stínuj lehce a postupně přidávej. Čárky dělej všechny stejným směrem.';
+  if (s.some(sh => sh.thin)) return 'Krátké čárky dělej rychlým švihem z ruky, ne pomalu.';
+  if (s.some(sh => /Q/.test(sh.d))) return 'Na oblouk si otoč papír tak, aby se ti čára kreslila z ruky ven.';
+  return 'Dívej se, kam má čára dojít, ne na špičku tužky.';
+}
 
 const RED = '#e5432f', OLD = '#3d4a56', GUIDE = '#8db8de', GRAPH = '#2b2b2b', HATCH = '#4a4a4a', INK = '#26323d';
 const TONES = { 1: [9, false], 2: [5.5, false], 3: [5.5, true], 4: [3.4, true] };
@@ -757,6 +1309,10 @@ function render(svg, dr, step) {
         el.setAttribute('stroke', col); el.setAttribute('stroke-width', 1.5); el.setAttribute('stroke-dasharray', '3 7');
         if (!isNew) el.setAttribute('opacity', 0.55);
       }
+    } else if (sh.dot) {
+      el.setAttribute('fill', isNew ? RED : GUIDE);
+      el.setAttribute('stroke', isNew ? RED : GUIDE);
+      el.setAttribute('stroke-width', 2);
     } else if (sh.guide) {
       el.setAttribute('fill', 'none');
       el.setAttribute('stroke', isNew ? RED : GUIDE);
@@ -866,12 +1422,15 @@ function renderHome() {
 
 // --- drawing ---
 let cur = null, step = 0;
+let helpOn = ls.get('pomoc') !== false;
+const stepsKey = () => helpOn ? 'kroky' : 'kroky-bez';
 function openDrawing(dr) {
-  cur = dr;
-  const saved = (ls.get('kroky') || {})[dr.id];
-  step = Number.isInteger(saved) && saved <= dr.steps.length ? saved : 0;
+  cur = viewOf(dr, helpOn);
+  const saved = (ls.get(stepsKey()) || {})[dr.id];
+  step = Number.isInteger(saved) && saved < cur.steps.length ? saved : 0;
   $('title').textContent = dr.name;
   $('legend').hidden = dr.style !== 'pencil';
+  $('legGuide').hidden = !helpOn;
   go('draw');
   show();
 }
@@ -892,7 +1451,8 @@ function show() {
   $('prev').disabled = step === 0;
   $('next').hidden = fin; $('snap').hidden = !fin; $('again').hidden = !fin;
   $('next').textContent = step === N - 1 ? 'Hotovo ▶' : 'Další ▶';
-  const k = ls.get('kroky') || {}; k[cur.id] = step; ls.set('kroky', k);
+  const k = ls.get(stepsKey()) || {}; k[cur.id] = step; ls.set(stepsKey(), k);
+  $('trickText').hidden = true; $('trick').hidden = fin;
   if (fin && !progress.done[cur.id]) {
     progress.done[cur.id] = Date.now();
     saveProgress();
@@ -1034,6 +1594,24 @@ if (!synth) { $('say').hidden = true; $('voice').hidden = true; }
 paintVoice();
 $('say').addEventListener('click', () => speak($('tip').textContent));
 $('voice').addEventListener('click', () => { voiceOn = !voiceOn; ls.set('predcitani', voiceOn); paintVoice(); if (voiceOn) speak($('tip').textContent); else hush(); });
+
+// --- help mode and tricks ---
+function paintHelp() {
+  $('helpToggle').setAttribute('aria-pressed', helpOn);
+  $('helpToggle').textContent = helpOn ? 'S pomocí' : 'Bez pomoci';
+}
+paintHelp();
+$('helpToggle').addEventListener('click', () => {
+  helpOn = !helpOn; ls.set('pomoc', helpOn); paintHelp();
+  toast(helpOn ? 'Zapnuto: pomocné čáry a tečky' : 'Vypnuto: jen samotný obrázek');
+});
+$('trick').addEventListener('click', () => {
+  const box = $('trickText');
+  if (!box.hidden) { box.hidden = true; return; }
+  box.textContent = trickFor(cur.steps[step]);
+  box.hidden = false;
+  speak(box.textContent);
+});
 
 // --- photos ---
 async function shrink(file) {
