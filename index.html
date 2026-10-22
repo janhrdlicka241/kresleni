@@ -240,8 +240,8 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
       <h2>Můj deník</h2>
     </div>
     <div class="jgrid" id="jgrid"></div>
-    <button class="btn-soft parent" id="unlock"></button>
-    <p class="note">Verze 1.12</p>
+    <button class="btn-soft parent" id="unlock" hidden></button>
+    <p class="note">Verze 1.13</p>
   </section>
 </div>
 <div class="toast" id="toast"></div>
@@ -1369,11 +1369,8 @@ function saveProgress() {
 const journal = () => [...cloudJournal, ...localJournal].sort((a, b) => b.at - a.at);
 const doneCount = () => Object.keys(progress.done).filter(id => byId[id]).length;
 
-function isUnlocked(dr) {
-  if (progress.unlockAll || dr.open || dr.idx === 0 || progress.done[dr.id]) return true;
-  const sec = SECTIONS.find(s => s.id === dr.section);
-  return !!progress.done[sec.items[dr.idx - 1].id];
-}
+// all pictures are open from version 1.13
+function isUnlocked(dr) { return true; }
 
 const BADGES = [
   { name: 'První obrázek', ok: () => doneCount() >= 1 },
