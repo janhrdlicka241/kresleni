@@ -164,6 +164,98 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
 .toast.show { transform: translate(-50%, 0); visibility: visible; }
 .busy { position: fixed; inset: 0; background: rgba(38,50,61,.45); display: grid; place-items: center; z-index: 30; color: #fff; font-family: var(--display); font-size: 1.6rem; font-weight: 800; }
 
+/* Pohádky (1.14) */
+.story-banner { display: flex; align-items: center; gap: 16px; text-align: left; background: #fff6dc; border-radius: 24px; padding: 16px 20px; box-shadow: 0 5px 0 #f0d58a; }
+.story-banner:active { transform: translateY(4px); box-shadow: 0 1px 0 #f0d58a; }
+.story-banner .sb-ico { font-size: 3rem; line-height: 1; }
+.story-banner b { display: block; font-size: 1.9rem; line-height: 1.05; }
+.story-banner small { display: block; font-family: var(--body); font-weight: 700; color: var(--muted); font-size: 1.05rem; }
+.story-banner .sb-txt { flex: 1; }
+.story-banner .sb-go { background: var(--go); color: var(--go-ink); border-radius: 16px; padding: 10px 18px; font-size: 1.3rem; box-shadow: 0 4px 0 var(--go-edge); }
+.stories, .hero, .wiz { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; padding-bottom: 20px; }
+.who { font-size: 1.05rem; }
+.pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.pcard { background: var(--sheet); border-radius: 28px; padding: 26px 16px; box-shadow: 0 6px 0 var(--line); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pcard:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--line); }
+.pcard .big-e { font-size: 5rem; line-height: 1.1; }
+.pcard b { font-size: 2rem; }
+.pcard span { color: var(--muted); font-family: var(--body); font-weight: 700; }
+.acts { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+.acts > button { border-radius: 24px; padding: 22px 16px; font-size: clamp(1.4rem, 3.4vw, 2rem); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.acts .rand { background: var(--sheet); box-shadow: 0 5px 0 var(--line); }
+.acts > button:active { transform: translateY(4px); box-shadow: none; }
+.ai-note { background: var(--hint); border: 2px solid var(--hint-edge); border-radius: 16px; padding: 10px 14px; font-weight: 700; }
+.portrait { width: 100%; max-width: 150px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; overflow: hidden; position: relative; }
+.portrait .pe { font-size: 4.6rem; line-height: 1; }
+.portrait .pa { position: absolute; right: 8%; top: 6%; font-size: 1.9rem; }
+.portrait svg { width: 100%; height: 100%; }
+.card .add { width: 100%; max-width: 150px; aspect-ratio: 1; border-radius: 50%; border: 4px dashed var(--line); display: grid; place-items: center; font-size: 3.4rem; color: var(--muted); box-sizing: border-box; }
+.scard { position: relative; background: var(--sheet); border-radius: 22px; padding: 10px; box-shadow: 0 4px 0 var(--line); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.scard:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.scard .thumb { aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: #eef4f9; display: grid; place-items: center; font-size: 3rem; }
+.scard .thumb svg { width: 100%; height: 100%; display: block; }
+.scard b { font-family: var(--display); font-size: 1.2rem; line-height: 1.15; }
+.scard span { color: var(--muted); font-weight: 600; font-size: .9rem; }
+.scard .heart { position: absolute; top: 14px; right: 16px; font-size: 1.6rem; }
+.ppanel { background: var(--sheet); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 0 var(--line); user-select: text; -webkit-user-select: text; }
+.ppanel label { display: flex; flex-direction: column; gap: 4px; font-weight: 800; }
+.ppanel input, .hero textarea, .hero input[type=text] { font: 600 1.1rem var(--body); padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); user-select: text; -webkit-user-select: text; }
+.ppanel .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ppanel .kid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.ppanel small { color: var(--muted); font-weight: 600; }
+.hero-wrap { display: grid; gap: 16px; }
+.hero-prev { background: var(--sheet); border-radius: 24px; padding: 16px; box-shadow: 0 5px 0 var(--line); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.hero-prev .portrait { max-width: 190px; }
+.hero-prev p { margin: 0; font-weight: 800; font-size: 1.2rem; }
+.grp { display: flex; flex-direction: column; gap: 8px; }
+.grp h3 { font-size: 1.35rem; }
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
+.opts.big { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+.opt { background: var(--sheet); border-radius: 20px; padding: 12px 8px 10px; box-shadow: 0 4px 0 var(--line); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 1.05rem; line-height: 1.15; text-align: center; }
+.opt .oe { font-size: 2.6rem; line-height: 1.15; }
+.opts.big .opt .oe { font-size: 3.6rem; }
+.opts.big .opt { font-size: 1.3rem; padding: 18px 8px 14px; }
+.opt .portrait { max-width: 90px; }
+.opt[aria-pressed="true"] { outline: 4px solid var(--new); outline-offset: -4px; }
+.opt:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.sw { width: 54px; height: 54px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 3px 0 var(--line); }
+.sw-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.sw[aria-pressed="true"] { outline: 4px solid var(--new); outline-offset: 2px; }
+.hero textarea { min-height: 80px; resize: vertical; }
+.big-go { border-radius: 24px; padding: 20px 28px; font-size: clamp(1.4rem, 3.4vw, 2rem); }
+.big-go:active { transform: translateY(4px); box-shadow: none; }
+.wq { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+.summ { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { background: var(--sheet); border-radius: 999px; padding: 8px 16px; font-weight: 800; font-size: 1.15rem; box-shadow: 0 3px 0 var(--line); }
+.read { display: grid; gap: 14px; grid-template-rows: auto 1fr auto; }
+.rbody { min-height: 0; display: grid; gap: 14px; grid-template-rows: minmax(0, 1fr) auto; }
+.rpic { min-height: 0; display: flex; justify-content: center; align-items: center; container-type: size; }
+.rpic .frame2 { width: min(100cqw, 133cqh); aspect-ratio: 4 / 3; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 6px 0 var(--line); display: grid; place-items: center; }
+.rpic .frame2 svg { width: 100%; height: 100%; display: block; }
+.loading { font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--muted); text-align: center; padding: 20px; }
+.loading .pen { display: inline-block; font-size: 3rem; animation: wob 1s ease-in-out infinite alternate; }
+@keyframes wob { from { transform: rotate(-15deg) translateX(-10px); } to { transform: rotate(15deg) translateX(10px); } }
+.rtext { margin: 0; font-size: clamp(1.35rem, 2.9vw, 1.9rem); font-weight: 700; line-height: 1.45; background: var(--sheet); border-radius: 22px; padding: 16px 20px; box-shadow: 0 4px 0 var(--line); max-height: 40vh; overflow-y: auto; }
+.rtext.small { font-size: clamp(1.6rem, 3.4vw, 2.3rem); }
+.rtext .w.hl { background: var(--go); border-radius: 6px; }
+.rend { display: flex; flex-direction: column; gap: 12px; }
+.rend button { border-radius: 20px; padding: 16px; font-size: 1.35rem; }
+.rnav { display: grid; grid-template-columns: 1fr auto auto 2fr; gap: 12px; align-items: center; }
+.rnav > .prev, .rnav > .btn-go { border-radius: 22px; padding: 16px; font-size: clamp(1.3rem, 3vw, 1.8rem); }
+.rnav > .prev:active, .rnav > .btn-go:active { transform: translateY(4px); box-shadow: none; }
+.rnav .prev:disabled { opacity: .35; }
+.speed { display: flex; gap: 6px; }
+.speed button { background: var(--sheet); border-radius: 14px; width: 52px; height: 52px; font-size: 1.6rem; box-shadow: 0 3px 0 var(--line); }
+.sbusy { position: fixed; inset: 0; background: rgba(38,50,61,.55); display: grid; place-items: center; z-index: 30; color: #fff; font-family: var(--display); font-size: 1.8rem; font-weight: 800; text-align: center; padding: 20px; }
+.sbusy .pen { display: block; font-size: 4rem; animation: wob 1s ease-in-out infinite alternate; }
+@media (orientation: landscape) and (min-width: 760px) {
+  .rbody { grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); grid-template-rows: minmax(0, 1fr); }
+  .rtext { max-height: none; }
+  .rside { display: flex; flex-direction: column; justify-content: center; gap: 14px; min-height: 0; overflow-y: auto; }
+  .hero-wrap { grid-template-columns: minmax(220px, 300px) 1fr; align-items: start; }
+  .hero-prev { position: sticky; top: 0; }
+}
+
 @media (orientation: landscape) and (min-width: 760px) {
   .draw { grid-template-columns: minmax(0, 1fr) minmax(260px, 350px); grid-template-rows: auto 1fr; }
   .top { grid-column: 1 / -1; }
@@ -185,6 +277,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
       <button class="btn-soft" id="openJournal"></button>
     </div>
     <div class="badges" id="badges"></div>
+    <button class="story-banner" id="openStories"><span class="sb-ico">📖</span><span class="sb-txt"><b>Pohádky</b><small>Vymysli si vlastní pohádku s obrázky a předčítáním</small></span><span class="sb-go">▶</span></button>
     <div id="sections"></div>
   </section>
 
@@ -241,7 +334,64 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     </div>
     <div class="jgrid" id="jgrid"></div>
     <button class="btn-soft parent" id="unlock" hidden></button>
-    <p class="note">Verze 1.13</p>
+    <p class="note">Verze 1.14</p>
+  </section>
+
+  <section class="screen stories" id="stories" hidden>
+    <div class="top">
+      <button class="btn-soft" id="sBack">◀ Domů</button>
+      <h2>Pohádky</h2>
+      <button class="btn-soft who" id="sWho" hidden></button>
+    </div>
+    <div id="sBody" style="display:flex;flex-direction:column;gap:18px"></div>
+    <button class="btn-soft parent" id="sParent">Pro rodiče: podrž 2 s pro nastavení</button>
+    <div class="ppanel" id="sPanel" hidden></div>
+    <p class="note">Verze 1.14</p>
+  </section>
+
+  <section class="screen hero" id="hero" hidden>
+    <div class="top">
+      <button class="btn-soft" id="hBack">◀ Zpět</button>
+      <h2>Nový hrdina</h2>
+    </div>
+    <div class="hero-wrap">
+      <div class="hero-prev" id="hPrev"></div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div id="hOpts" style="display:flex;flex-direction:column;gap:18px"></div>
+        <button class="btn btn-go big-go" id="hSave">Uložit hrdinu ✔</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen wiz" id="wiz" hidden>
+    <div class="top">
+      <button class="btn-soft" id="wBack">◀ Zpět</button>
+      <h2 class="wq" id="wQ"></h2>
+      <button class="say" id="wSay" aria-label="Přečíst otázku"></button>
+    </div>
+    <div class="dots" id="wDots"></div>
+    <div id="wBody" style="display:flex;flex-direction:column;gap:18px"></div>
+  </section>
+
+  <section class="screen read" id="read" hidden>
+    <div class="top">
+      <button class="btn-soft" id="rBack">◀ Knihovnička</button>
+      <h2 id="rTitle"></h2>
+      <button class="btn-soft" id="rFav" aria-label="Oblíbená"></button>
+    </div>
+    <div class="rbody">
+      <div class="rpic" id="rPic"></div>
+      <div class="rside">
+        <p class="rtext" id="rText"></p>
+        <div class="rend" id="rEnd" hidden></div>
+      </div>
+    </div>
+    <div class="rnav">
+      <button class="prev" id="rPrev">◀</button>
+      <button class="say" id="rSay" aria-label="Přečíst nahlas"></button>
+      <div class="speed"><button id="rSlow" aria-label="Číst pomaleji">🐢</button><button id="rFast" aria-label="Číst rychleji">🐇</button></div>
+      <button class="btn-go" id="rNext">Další ▶</button>
+    </div>
   </section>
 </div>
 <div class="toast" id="toast"></div>
@@ -1382,11 +1532,12 @@ const BADGES = [
 ];
 
 // --- screens ---
-function go(name) { for (const s of ['home', 'draw', 'compare', 'journal']) $(s).hidden = s !== name; if (name === 'home') renderHome(); if (name === 'journal') renderJournal(); }
+function go(name) { document.querySelectorAll('.screen').forEach(s => { s.hidden = s.id !== name; }); const sc = $(name); if (sc && sc.scrollTo) sc.scrollTo(0, 0); if (name === 'home') renderHome(); if (name === 'journal') renderJournal(); if (name === 'stories') renderStories(); }
 
 function renderHome() {
-  $('stars').innerHTML = STAR + doneCount();
-  $('stars').setAttribute('aria-label', doneCount() + ' hvězdiček');
+  const total = doneCount() + Object.keys(progress.done).filter(k => k.startsWith('p:')).length;
+  $('stars').innerHTML = STAR + total;
+  $('stars').setAttribute('aria-label', total + ' hvězdiček');
   $('openJournal').textContent = 'Můj deník (' + journal().length + ')';
   $('badges').innerHTML = BADGES.map(b => `<span class="badge${b.ok() ? ' on' : ''}"><span class="medal">${STAR}</span>${b.name}</span>`).join('');
   const wrap = $('sections');
@@ -1797,6 +1948,596 @@ function refresh() { if (!$('home').hidden) renderHome(); if (!$('journal').hidd
     }, () => {});
   } catch (e) { /* stays on this device */ }
 })();
+
+
+// ================= Pohádky (1.14) =================
+// AI: na claude.ai přes schopnost "sample" (bez klíče); na GitHub Pages přes Cloudflare Worker (STORY_WORKER nebo adresa z nastavení pro rodiče);
+// bez AI se pohádky skládají z ukázkové sady a obrázky z jednoduchých scén.
+const STORY_WORKER = '';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rnd = a => a[Math.floor(Math.random() * a.length)];
+
+const KINDS = [
+  { id: 'liska', label: 'Liška', e: '🦊' }, { id: 'kocka', label: 'Kočička', e: '🐱', draw: 'kocka' },
+  { id: 'pes', label: 'Pejsek', e: '🐶', draw: 'pes' }, { id: 'zajic', label: 'Zajíček', e: '🐰' },
+  { id: 'sova', label: 'Sovička', e: '🦉', draw: 'sova' }, { id: 'jezek', label: 'Ježek', e: '🦔', draw: 'r-jezek' },
+  { id: 'prase', label: 'Prasátko', e: '🐷', draw: 'prase' }, { id: 'medved', label: 'Medvídek', e: '🐻' },
+  { id: 'drak', label: 'Dráček', e: '🐲' }, { id: 'jednorozec', label: 'Jednorožec', e: '🦄' },
+  { id: 'princezna', label: 'Princezna', e: '👸' }, { id: 'rytir', label: 'Rytíř', e: '🛡️' },
+  { id: 'vila', label: 'Víla', e: '🧚' }, { id: 'robot', label: 'Robot', e: '🤖' },
+  { id: 'holcicka', label: 'Holčička', e: '👧' }, { id: 'kluk', label: 'Kluk', e: '👦' },
+  { id: 'motyl', label: 'Motýlek', e: '🦋', draw: 'r-motyl' }, { id: 'prisera', label: 'Příšerka', e: '👾' },
+];
+const COLORS = [
+  { id: 'cervena', label: 'červená', c: '#ef5350' }, { id: 'oranzova', label: 'oranžová', c: '#ff9a3c' },
+  { id: 'zluta', label: 'žlutá', c: '#ffd54a' }, { id: 'zelena', label: 'zelená', c: '#66bb6a' },
+  { id: 'modra', label: 'modrá', c: '#4fa3f7' }, { id: 'fialova', label: 'fialová', c: '#a77bdb' },
+  { id: 'ruzova', label: 'růžová', c: '#f48fb1' }, { id: 'hneda', label: 'hnědá', c: '#a1724e' },
+  { id: 'bila', label: 'bílá', c: '#f4f4f4' }, { id: 'duhova', label: 'duhová', c: 'conic-gradient(#ef5350,#ffd54a,#66bb6a,#4fa3f7,#a77bdb,#ef5350)' },
+];
+const ACCS = [
+  { id: 'nic', label: 'Nic', e: '✖️' }, { id: 'korunka', label: 'Korunka', e: '👑', acc: 'korunku' },
+  { id: 'bryle', label: 'Brýle', e: '👓', acc: 'brýle' }, { id: 'plast', label: 'Plášť', e: '🧣', acc: 'kouzelný plášť' },
+  { id: 'kridla', label: 'Křídla', e: '🪽', acc: 'křídla' }, { id: 'klobouk', label: 'Klobouk', e: '🎩', acc: 'klobouk' },
+  { id: 'masle', label: 'Mašle', e: '🎀', acc: 'mašli' }, { id: 'batoh', label: 'Batůžek', e: '🎒', acc: 'batůžek' },
+];
+const POWERS = [
+  { id: 'nic', label: 'Nic zvláštního', e: '🙂' }, { id: 'kouzlit', label: 'Kouzlit', e: '🪄' },
+  { id: 'letat', label: 'Létat', e: '🎈' }, { id: 'zvirata', label: 'Mluvit se zvířaty', e: '🐾' },
+  { id: 'neviditelny', label: 'Zmizet', e: '🫥' }, { id: 'silny', label: 'Být silný', e: '💪' },
+  { id: 'rychly', label: 'Být rychlý', e: '⚡' }, { id: 'zpivat', label: 'Krásně zpívat', e: '🎵' },
+];
+const FRIENDS = [
+  { id: 'nikdo', label: 'Nikdo', e: '🚶' }, { id: 'sova', label: 'Sova', e: '🦉' }, { id: 'pes', label: 'Pejsek', e: '🐶' },
+  { id: 'kocka', label: 'Kočička', e: '🐱' }, { id: 'drak', label: 'Dráček', e: '🐲' }, { id: 'vila', label: 'Víla', e: '🧚' },
+  { id: 'robot', label: 'Robot', e: '🤖' }, { id: 'sestra', label: 'Sestřička', e: '👧' }, { id: 'zelva', label: 'Želvička', e: '🐢' },
+];
+const PLACES = [
+  { id: 'les', label: 'Les', e: '🌲', in: 'v lese', sky: '#bfe3f7', ground: '#6fbf73', deco: '🌲🍄🌳' },
+  { id: 'hrad', label: 'Hrad', e: '🏰', in: 'na hradě', sky: '#d6e9ff', ground: '#9ccc65', deco: '🏰🚩🌷' },
+  { id: 'more', label: 'Moře', e: '🌊', in: 'u moře', sky: '#aee1ff', ground: '#4fa3f7', deco: '⛵🐚🐠' },
+  { id: 'vesmir', label: 'Vesmír', e: '🚀', in: 've vesmíru', sky: '#1f2a5c', ground: '#7a6fb0', deco: '🪐⭐🌙' },
+  { id: 'louka', label: 'Louka', e: '🌼', in: 'na louce', sky: '#c9ecff', ground: '#8fd16a', deco: '🌼🦋🌻' },
+  { id: 'snih', label: 'Sníh', e: '❄️', in: 'v zasněžených horách', sky: '#dcecf7', ground: '#ffffff', deco: '⛄❄️🌲' },
+  { id: 'dzungle', label: 'Džungle', e: '🌴', in: 'v džungli', sky: '#c6f0c2', ground: '#3f9b4f', deco: '🌴🦜🍌' },
+];
+const PLOTS = [
+  { id: 'hvezda', label: 'Ztracená hvězdička', e: '⭐', demo: 'Jednoho dne spadla z nebe malá hvězdička a nemohla najít cestu domů.' },
+  { id: 'pomoc', label: 'Pomoc kamarádovi', e: '🤝', demo: 'Jednoho dne někdo smutně plakal, protože potřeboval pomoc.' },
+  { id: 'poklad', label: 'Hledání pokladu', e: '💎', demo: 'Jednoho dne se objevila stará mapa, na které byl nakreslený poklad.' },
+  { id: 'kouzlo', label: 'Pokažené kouzlo', e: '🪄', demo: 'Jednoho dne se pokazilo kouzlo a všechno začalo být vzhůru nohama.' },
+  { id: 'vylet', label: 'Velký výlet', e: '🎒', demo: 'Jednoho rána bylo krásně a byl čas vyrazit na velký výlet.' },
+  { id: 'oslava', label: 'Narozeninová oslava', e: '🎂', demo: 'Jednoho dne se chystala velká narozeninová oslava, ale chyběl dort.' },
+  { id: 'kamarad', label: 'Nový kamarád', e: '🤗', demo: 'Jednoho dne se objevil někdo nový, kdo neměl žádné kamarády.' },
+];
+const VILLAINS = [
+  { id: 'nikdo', label: 'Nikdo', e: '😊', small: true },
+  { id: 'zlobivec', label: 'Zlobivec, co se polepší', e: '😜', small: true, demo: 'Cestou potkali malého zlobivce, který dělal schválnosti, ale nakonec se polepšil.' },
+  { id: 'skritek', label: 'Lstivý skřítek', e: '🧝', demo: 'Cestou jim lstivý skřítek zamotal cestu, ale oni ho přechytračili.' },
+  { id: 'carodej', label: 'Čaroděj', e: '🧙', demo: 'Cestou jim zlý čaroděj zatarasil cestu, ale odvaha a přátelství ho porazily.' },
+  { id: 'drak', label: 'Velký drak', e: '🐉', demo: 'Cestou potkali velkého draka, který byl ve skutečnosti jen smutný a osamělý.' },
+];
+const LENGTHS = [
+  { id: 3, label: 'Krátká', e: '📄' }, { id: 4, label: 'Střední', e: '📑' }, { id: 6, label: 'Dlouhá', e: '📚' },
+];
+
+// --- data ---
+const PH_DEF = { profiles: [{ id: 'velka', name: 'Velká', age: 8, icon: '👧' }, { id: 'mala', name: 'Malá', age: 4, icon: '🧒' }], cur: null, heroes: [], stories: [], worker: '' };
+let PH = Object.assign({}, PH_DEF, ls.get('pohadky') || {});
+function phSave() {
+  const keep = 80;
+  if (PH.stories.length > keep) {
+    const drop = PH.stories.filter(s => !s.fav).sort((a, b) => a.at - b.at).slice(0, PH.stories.length - keep).map(s => s.id);
+    PH.stories = PH.stories.filter(s => !drop.includes(s.id));
+  }
+  try { localStorage.setItem('pohadky', JSON.stringify(PH)); }
+  catch (e) { toast('Paměť je plná – smaž pár starých pohádek.'); }
+}
+const prof = () => PH.profiles.find(p => p.id === PH.cur) || null;
+const isSmall = () => (prof() ? prof().age : 8) < 6;
+const myHeroes = () => PH.heroes.filter(h => h.profile === PH.cur);
+const myStories = () => PH.stories.filter(s => (s.for || []).includes(PH.cur)).sort((a, b) => (b.fav - a.fav) || (b.at - a.at));
+const kindOf = id => KINDS.find(k => k.id === id);
+const byIdIn = (arr, id) => arr.find(x => x.id === id);
+
+// --- AI ---
+let sampleFn = null;
+const workerUrl = () => (PH.worker || STORY_WORKER || '').trim();
+const aiReady = () => !!(sampleFn || workerUrl());
+(async () => {
+  if (!window.claude || !window.claude.use) return;
+  try { const s = await claude.use('sample'); if (s) { sampleFn = s; if (!$('stories').hidden) renderStories(); } } catch (e) {}
+})();
+async function ai(prompt, kind) {
+  if (sampleFn) {
+    try { const r = await sampleFn(prompt, { modelTier: 'default' }); return r.text || ''; }
+    catch (e) { if (e && e.code === 'not_granted') sampleFn = null; if (!workerUrl()) throw e; }
+  }
+  if (!workerUrl()) throw new Error('offline');
+  const r = await fetch(workerUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, kind }) });
+  if (!r.ok) throw new Error('worker ' + r.status);
+  const d = await r.json();
+  return d.text || '';
+}
+function parseJSON(t) {
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('bez JSON');
+  return JSON.parse(t.slice(a, b + 1));
+}
+let svgN = 0;
+function cleanSvg(txt) {
+  const m = String(txt || '').match(/<svg[\s\S]*<\/svg>/i);
+  if (!m) return null;
+  const doc = new DOMParser().parseFromString(m[0], 'image/svg+xml');
+  if (doc.querySelector('parsererror')) return null;
+  const svg = doc.documentElement;
+  if (svg.nodeName.toLowerCase() !== 'svg') return null;
+  const bad = /^(script|foreignobject|iframe|image|a|audio|video|object|embed|style)$/i;
+  [...svg.querySelectorAll('*')].forEach(el => { if (bad.test(el.nodeName)) el.remove(); });
+  const pre = 'g' + (++svgN) + Date.now().toString(36) + '_';
+  const all = [svg, ...svg.querySelectorAll('*')];
+  for (const el of all) for (const at of [...el.attributes]) {
+    const n = at.name.toLowerCase(), v = at.value;
+    if (n.startsWith('on')) { el.removeAttribute(at.name); continue; }
+    if ((n === 'href' || n === 'xlink:href') && !v.startsWith('#')) { el.removeAttribute(at.name); continue; }
+    if (/url\(\s*['"]?(?!#)/i.test(v) || /javascript:/i.test(v)) { el.removeAttribute(at.name); continue; }
+    if (n === 'id') el.setAttribute('id', pre + v);
+    else if (/url\(#/.test(v)) el.setAttribute(at.name, v.replace(/url\(#/g, 'url(#' + pre));
+    else if ((n === 'href' || n === 'xlink:href') && v.startsWith('#')) el.setAttribute(at.name, '#' + pre + v.slice(1));
+  }
+  if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', '0 0 ' + (parseFloat(svg.getAttribute('width')) || 400) + ' ' + (parseFloat(svg.getAttribute('height')) || 300));
+  svg.removeAttribute('width'); svg.removeAttribute('height');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  return new XMLSerializer().serializeToString(svg);
+}
+
+// --- hero helpers ---
+function heroLook(h) {
+  const parts = [];
+  const k = kindOf(h.kind);
+  if (k) parts.push(k.label);
+  const c = byIdIn(COLORS, h.color); if (c) parts.push('barva ' + c.label);
+  const a = byIdIn(ACCS, h.acc); if (a && a.acc) parts.push('má ' + a.acc);
+  const p = byIdIn(POWERS, h.power); if (p && p.id !== 'nic') parts.push('umí ' + p.label.toLowerCase());
+  if (h.name) parts.push('jmenuje se ' + h.name);
+  let s = parts.join(', ');
+  if (h.desc) s += (s ? '. Vlastní popis od dítěte: ' : 'Vlastní popis od dítěte: ') + h.desc;
+  return s || 'malý veselý hrdina';
+}
+const heroName = h => h.name || (kindOf(h.kind) ? kindOf(h.kind).label : 'Hrdina');
+const heroEmoji = h => (kindOf(h.kind) || { e: '⭐' }).e;
+function portraitHTML(h) {
+  if (h.svg) return `<span class="portrait" style="background:#fff6dc">${h.svg}</span>`;
+  const c = byIdIn(COLORS, h.color), a = byIdIn(ACCS, h.acc);
+  const bg = c ? c.c : '#fff6dc';
+  return `<span class="portrait" style="background:${bg}"><span class="pe">${heroEmoji(h)}</span>${a && a.acc ? `<span class="pa">${a.e}</span>` : ''}</span>`;
+}
+
+// --- screens ---
+function sbusy(on, msg) {
+  let el = $('sbusy');
+  if (!el) { el = document.createElement('div'); el.id = 'sbusy'; el.className = 'sbusy'; document.body.appendChild(el); }
+  el.hidden = !on;
+  if (on) el.innerHTML = `<div><span class="pen">✏️</span>${esc(msg)}</div>`;
+}
+function sayKid(text) { if (isSmall() && text) speak(text); }
+
+function renderStories() {
+  const p = prof(), body = $('sBody');
+  $('sWho').hidden = !p;
+  if (p) $('sWho').textContent = p.icon + ' ' + p.name + ' · změnit';
+  if (!p) {
+    body.innerHTML = '<h2 class="wq">Kdo bude poslouchat?</h2><div class="pick"></div>';
+    const pick = body.querySelector('.pick');
+    PH.profiles.forEach(pr => {
+      const b = document.createElement('button'); b.className = 'pcard';
+      b.innerHTML = `<span class="big-e">${pr.icon}</span><b>${esc(pr.name)}</b><span>${pr.age} ${pr.age < 5 ? 'roky' : 'let'}</span>`;
+      b.addEventListener('click', () => { PH.cur = pr.id; phSave(); renderStories(); if (pr.age < 6) speak('Ahoj ' + pr.name + '! Pojď si vymyslet pohádku.'); });
+      pick.appendChild(b);
+    });
+    return;
+  }
+  body.innerHTML = `
+    ${aiReady() ? '' : '<div class="ai-note">Kouzelník na pohádky (AI) zatím není připojený, takže pohádky jsou z ukázkové sady. Rodič ho zapne v nastavení dole.</div>'}
+    <div class="acts"><button class="btn-go" id="sNew">✨ Nová pohádka</button><button class="rand" id="sRand">🎲 Překvap mě</button></div>
+    <div class="sec"><div class="sec-h"><h2>Moji hrdinové</h2><span>Klepni na hrdinu a vymysli s ním pohádku</span></div><div class="grid" id="sHeroes"></div></div>
+    <div class="sec"><div class="sec-h"><h2>Moje knihovnička</h2></div><div class="jgrid" id="sLib"></div></div>`;
+  $('sNew').addEventListener('click', () => startWizard());
+  $('sRand').addEventListener('click', () => { wizRandom(); });
+  const hg = $('sHeroes');
+  for (const h of myHeroes()) {
+    const b = document.createElement('button'); b.className = 'card';
+    b.innerHTML = portraitHTML(h) + `<span class="name">${esc(heroName(h))}</span>`;
+    b.addEventListener('click', () => { sayKid(heroName(h)); startWizard({ hero: { saved: h.id } }); });
+    hg.appendChild(b);
+  }
+  const add = document.createElement('button'); add.className = 'card';
+  add.innerHTML = '<span class="add">+</span><span class="name">Nový hrdina</span>';
+  add.addEventListener('click', () => openHeroMaker('stories'));
+  hg.appendChild(add);
+  const lib = $('sLib'), list = myStories();
+  if (!list.length) lib.innerHTML = '<div class="empty">Zatím tu nejsou žádné pohádky. Klepni na ✨ Nová pohádka.</div>';
+  for (const s of list) {
+    const b = document.createElement('button'); b.className = 'scard';
+    const first = s.pages[0] || {};
+    b.innerHTML = `<div class="thumb">${first.svg || s.look.heroE}</div><b>${esc(s.title)}</b><span>${new Date(s.at).toLocaleDateString('cs-CZ')} · ${s.pages.length} stránky</span>${s.fav ? '<span class="heart">❤️</span>' : ''}`;
+    b.addEventListener('click', () => openReader(s, 0));
+    lib.appendChild(b);
+  }
+}
+$('sBack').addEventListener('click', () => { hushAll(); go('home'); });
+$('sWho').addEventListener('click', () => { PH.cur = null; phSave(); renderStories(); });
+
+// --- parent settings ---
+let pHold = 0;
+const pEnd = () => { clearTimeout(pHold); $('sParent').classList.remove('hold'); };
+$('sParent').addEventListener('pointerdown', () => { $('sParent').classList.add('hold'); pHold = setTimeout(() => { pEnd(); openPanel(); }, 2000); });
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('sParent').addEventListener(ev, pEnd));
+$('sParent').addEventListener('contextmenu', e => e.preventDefault());
+function openPanel() {
+  const P = $('sPanel');
+  P.hidden = false;
+  P.innerHTML = `<h3>Nastavení pro rodiče</h3>
+    <div class="two">${PH.profiles.map((p, i) => `<div class="kid"><label>Jméno ${i + 1}<input id="pn${i}" value="${esc(p.name)}"></label><label>Věk<input id="pa${i}" type="number" min="2" max="14" value="${p.age}"></label></div>`).join('')}</div>
+    <label>Adresa AI (Cloudflare Worker)<input id="pw" placeholder="https://pohadky.tvuj-ucet.workers.dev" value="${esc(PH.worker)}"></label>
+    <small>Stav AI: ${sampleFn ? 'připojeno přes claude.ai' : workerUrl() ? 'Worker nastaven' : 'nepřipojeno (ukázkové pohádky)'}</small>
+    <div class="row"><button class="btn btn-go" id="pSave" style="border-radius:16px;padding:10px 18px">Uložit</button><button class="btn-soft" id="pClose">Zavřít</button></div>
+    ${PH.heroes.length ? '<h3>Smazat hrdinu</h3><div class="row" id="pHeroes"></div>' : ''}`;
+  $('pSave').addEventListener('click', () => {
+    PH.profiles.forEach((p, i) => { p.name = $('pn' + i).value.trim() || p.name; const a = parseInt($('pa' + i).value, 10); if (a > 1 && a < 15) p.age = a; });
+    PH.worker = $('pw').value.trim();
+    phSave(); P.hidden = true; renderStories(); toast('Uloženo');
+  });
+  $('pClose').addEventListener('click', () => { P.hidden = true; });
+  const ph = $('pHeroes');
+  if (ph) PH.heroes.forEach(h => {
+    const b = document.createElement('button'); b.className = 'btn-soft danger';
+    const who = (PH.profiles.find(p => p.id === h.profile) || {}).name || '';
+    b.textContent = '✕ ' + heroName(h) + ' (' + who + ')';
+    b.addEventListener('click', () => { PH.heroes = PH.heroes.filter(x => x.id !== h.id); phSave(); openPanel(); renderStories(); });
+    ph.appendChild(b);
+  });
+  P.scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- hero maker ---
+let hm = null, hmBack = 'stories';
+function openHeroMaker(back) {
+  hmBack = back || 'stories';
+  hm = { kind: null, color: null, acc: 'nic', power: 'nic', name: '', desc: '' };
+  go('hero'); renderHero();
+  if (isSmall()) speak('Vymysli si hrdinu. Kdo to bude?');
+}
+function renderHero() {
+  $('hPrev').innerHTML = portraitHTML(hm) + `<p>${esc(hm.kind || hm.desc ? heroLook(hm) : 'Vyber, kdo to bude, nebo ho popiš vlastními slovy.')}</p>`;
+  const O = $('hOpts');
+  if (O.dataset.built) { paintHeroOpts(); return; }
+  O.dataset.built = 1;
+  const grp = (title, key, list) => {
+    const g = document.createElement('div'); g.className = 'grp';
+    g.innerHTML = `<h3>${title}</h3>`;
+    const box = document.createElement('div'); box.className = 'opts';
+    list.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt'; b.dataset.key = key; b.dataset.val = o.id;
+      b.innerHTML = `<span class="oe">${o.e}</span>${esc(o.label)}`;
+      b.addEventListener('click', () => { hm[key] = o.id; sayKid(o.label); renderHero(); });
+      box.appendChild(b);
+    });
+    g.appendChild(box); O.appendChild(g);
+  };
+  grp('Kdo to je?', 'kind', KINDS);
+  const cg = document.createElement('div'); cg.className = 'grp';
+  cg.innerHTML = '<h3>Jakou má barvu?</h3><div class="sw-row"></div>';
+  COLORS.forEach(c => {
+    const b = document.createElement('button'); b.className = 'sw'; b.dataset.key = 'color'; b.dataset.val = c.id;
+    b.style.background = c.c; b.setAttribute('aria-label', c.label);
+    b.addEventListener('click', () => { hm.color = c.id; sayKid(c.label); renderHero(); });
+    cg.querySelector('.sw-row').appendChild(b);
+  });
+  O.appendChild(cg);
+  grp('Co má na sobě?', 'acc', ACCS);
+  grp('Co umí?', 'power', POWERS);
+  const ng = document.createElement('div'); ng.className = 'grp';
+  ng.innerHTML = `<h3>Jak se jmenuje?</h3><input type="text" id="hName" maxlength="30" placeholder="Třeba Bára (nemusíš)">
+    <h3>Nebo ho popiš vlastními slovy</h3><textarea id="hDesc" maxlength="400" placeholder="Třeba: jednorožec, který má místo rohu zmrzlinu a bojí se tmy. Klepni na mikrofon 🎤 na klávesnici a řekni to nahlas."></textarea>`;
+  O.appendChild(ng);
+  $('hName').addEventListener('input', e => { hm.name = e.target.value.trim(); renderHero(); });
+  $('hDesc').addEventListener('input', e => { hm.desc = e.target.value.trim(); renderHero(); });
+  paintHeroOpts();
+}
+function paintHeroOpts() {
+  $('hOpts').querySelectorAll('[data-key]').forEach(b => b.setAttribute('aria-pressed', String(hm[b.dataset.key] === b.dataset.val)));
+  if ($('hName') && document.activeElement !== $('hName')) $('hName').value = hm.name;
+  if ($('hDesc') && document.activeElement !== $('hDesc')) $('hDesc').value = hm.desc;
+}
+$('hBack').addEventListener('click', () => { hushAll(); if (hmBack === 'wiz') { go('wiz'); renderWiz(); } else go('stories'); });
+$('hSave').addEventListener('click', async () => {
+  if (!hm.kind && !hm.desc) { toast('Vyber, kdo to je, nebo ho popiš.'); sayKid('Vyber, kdo to bude.'); return; }
+  const h = { id: 'h' + Date.now(), profile: PH.cur, ...hm, svg: null };
+  if (aiReady()) {
+    sbusy(true, 'Kreslím hrdinu…');
+    try {
+      const t = await ai(`Nakresli portrét pohádkového hrdiny pro malé děti jako jeden SVG obrázek.
+Hrdina: ${heroLook(h)}
+Pravidla: <svg> s viewBox="0 0 200 200" bez width a height; jemné kulaté pozadí světlé barvy přes celý obrázek; hrdina celý, uprostřed, veselý, s velkýma očima; plné barvy, jednoduché zaoblené tvary; žádný text, žádné <script>, <image>, <foreignObject>, odkazy ani externí zdroje; nejvýš 60 prvků.
+Odpověz pouze SVG kódem, nic jiného.`, 'svg');
+      h.svg = cleanSvg(t);
+    } catch (e) { /* zůstane obrázek z emoji */ }
+    sbusy(false);
+  }
+  PH.heroes.push(h); phSave();
+  toast('Hrdina je uložený!');
+  sayKid('Hotovo! ' + heroName(h) + ' je připravený na pohádku.');
+  if (hmBack === 'wiz') { wiz.pick.hero = { saved: h.id }; wiz.i = 1; go('wiz'); renderWiz(); }
+  else go('stories');
+});
+
+// --- story wizard ---
+let wiz = { i: 0, pick: {} };
+const wizSteps = () => isSmall() ? ['hero', 'friend', 'place', 'plot', 'villain'] : ['hero', 'friend', 'place', 'plot', 'villain', 'length'];
+const QUESTIONS = { hero: 'Kdo bude hrdina?', friend: 'Kdo půjde s ním?', place: 'Kde se to stane?', plot: 'Co se stane?', villain: 'Bude tam někdo zlobivý?', length: 'Jak dlouhou pohádku?' };
+function stepList(step) {
+  if (step === 'friend') return FRIENDS;
+  if (step === 'place') return PLACES;
+  if (step === 'plot') return PLOTS;
+  if (step === 'villain') return isSmall() ? VILLAINS.filter(v => v.small) : VILLAINS;
+  if (step === 'length') return LENGTHS;
+  return [];
+}
+function startWizard(pre) {
+  wiz = { i: 0, pick: Object.assign({}, pre || {}) };
+  if (wiz.pick.hero) wiz.i = 1;
+  go('wiz'); renderWiz();
+}
+function wizRandom() {
+  const hs = myHeroes();
+  const hero = hs.length && Math.random() < .6 ? { saved: rnd(hs).id } : { kind: rnd(KINDS).id };
+  wiz = { i: wizSteps().length, pick: { hero, friend: rnd(FRIENDS).id, place: rnd(PLACES).id, plot: rnd(PLOTS).id, villain: rnd(stepList('villain')).id, length: rnd(LENGTHS).id } };
+  go('wiz'); renderWiz();
+}
+function pickedHero() {
+  const p = wiz.pick.hero; if (!p) return null;
+  if (p.saved) return PH.heroes.find(h => h.id === p.saved) || null;
+  return { kind: p.kind, name: '', color: null, acc: 'nic', power: 'nic', desc: '' };
+}
+function renderWiz() {
+  const steps = wizSteps(), N = steps.length, done = wiz.i >= N;
+  const dots = $('wDots'); dots.textContent = '';
+  for (let i = 0; i <= N; i++) { const d = document.createElement('span'); if (i < wiz.i) d.className = 'on'; if (i === wiz.i) d.className = 'cur'; dots.appendChild(d); }
+  const B = $('wBody'); B.textContent = '';
+  if (done) {
+    $('wQ').textContent = 'Tvoje pohádka';
+    const h = pickedHero();
+    const chips = [
+      h && (heroEmoji(h) + ' ' + heroName(h)),
+      ...['friend', 'place', 'plot', 'villain', 'length'].map(k => { const o = byIdIn(stepList(k).length ? stepList(k) : [], wiz.pick[k]); return o && (o.e + ' ' + o.label); }),
+    ].filter(Boolean);
+    B.innerHTML = `<div class="summ">${chips.map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>
+      <button class="btn btn-go big-go" id="wGo">✨ Vyčaruj pohádku</button>
+      <button class="btn-soft" id="wAgain" style="align-self:flex-start">🎲 Zkusit jinak</button>`;
+    $('wGo').addEventListener('click', () => makeStory());
+    $('wAgain').addEventListener('click', () => wizRandom());
+    if (isSmall()) speak('Klepni na Vyčaruj pohádku.');
+    return;
+  }
+  const step = steps[wiz.i];
+  $('wQ').textContent = QUESTIONS[step];
+  const box = document.createElement('div'); box.className = 'opts big';
+  const addOpt = (inner, label, onPick, pressed) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.innerHTML = inner;
+    b.setAttribute('aria-pressed', String(!!pressed));
+    b.addEventListener('click', () => { sayKid(label); onPick(); });
+    box.appendChild(b);
+  };
+  const next = () => setTimeout(() => { wiz.i++; renderWiz(); }, isSmall() ? 1100 : 250);
+  if (step === 'hero') {
+    const cur = wiz.pick.hero || {};
+    myHeroes().forEach(h => addOpt(portraitHTML(h) + esc(heroName(h)), heroName(h), () => { wiz.pick.hero = { saved: h.id }; next(); }, cur.saved === h.id));
+    KINDS.forEach(k => addOpt(`<span class="oe">${k.e}</span>${esc(k.label)}`, k.label, () => { wiz.pick.hero = { kind: k.id }; next(); }, cur.kind === k.id));
+    addOpt('<span class="oe">➕</span>Vymyslet nového', 'Vymyslet nového hrdinu', () => openHeroMaker('wiz'));
+  } else {
+    stepList(step).forEach(o => addOpt(`<span class="oe">${o.e}</span>${esc(o.label)}`, o.label, () => { wiz.pick[step] = o.id; next(); }, wiz.pick[step] === o.id));
+  }
+  B.appendChild(box);
+  if (isSmall()) speak(QUESTIONS[step]);
+}
+$('wBack').addEventListener('click', () => { hushAll(); if (wiz.i > 0) { wiz.i--; renderWiz(); } else go('stories'); });
+$('wSay').addEventListener('click', () => speak($('wQ').textContent));
+
+// --- making a story ---
+function demoStory(h, pick) {
+  const n = heroName(h), pl = byIdIn(PLACES, pick.place), pt = byIdIn(PLOTS, pick.plot), fr = byIdIn(FRIENDS, pick.friend), vl = byIdIn(VILLAINS, pick.villain);
+  const pages = [
+    { text: `Tohle je ${n}. ${n} bydlí ${pl.in} a každé ráno se těší, co nového ho čeká.` },
+    { text: pt.demo + (fr && fr.id !== 'nikdo' ? ` Na pomoc přispěchal kamarád – ${fr.label.toLowerCase()}.` : ` ${n} se nebál a vyrazil.`) },
+    { text: (vl && vl.demo ? vl.demo + ' ' : '') + 'Nakonec všechno dobře dopadlo a všichni se radovali. A zazvonil zvonec a pohádky byl konec.' },
+  ];
+  return { title: `${n} ${pl.in}`, pages };
+}
+async function makeStory() {
+  const h = pickedHero(); if (!h) return;
+  const pick = wiz.pick, small = isSmall(), p = prof();
+  const n = small ? 3 : (pick.length || 4);
+  const pl = byIdIn(PLACES, pick.place), pt = byIdIn(PLOTS, pick.plot), fr = byIdIn(FRIENDS, pick.friend), vl = byIdIn(VILLAINS, pick.villain);
+  let obj = null, demo = false;
+  if (aiReady()) {
+    sbusy(true, 'Vymýšlím pohádku…');
+    const level = small
+      ? `Je jí ${p.age} roky a pohádku poslouchá. Piš velmi krátké a jednoduché věty, žádné strašidelné chvíle, veselé opakování. Každá stránka 2–4 krátké věty (nejvýš 40 slov).`
+      : `Je jí ${p.age} let a čte už sama. Používej pestřejší, ale srozumitelný slovník a občas přímou řeč. Každá stránka 60–90 slov.`;
+    const prompt = `Napiš českou pohádku pro dítě.
+${level}
+Hlavní hrdina: ${heroLook(h)}. Oslovuj ho jménem ${heroName(h)} a skloňuj ho správně.
+Kamarád: ${fr && fr.id !== 'nikdo' ? fr.label : 'žádný, hrdina jde sám'}.
+Místo: ${pl.label}.
+Co se stane: ${pt.label}.
+Zlobivec: ${vl && vl.id !== 'nikdo' ? vl.label + ' (nesmí být opravdu strašidelný, dobře to dopadne)' : 'žádný'}.
+Počet stránek: přesně ${n}.
+Pohádka má hezký začátek, napínavý (ale ne strašidelný) prostředek a šťastný konec s jemným ponaučením. Poslední stránka končí větou „A zazvonil zvonec a pohádky byl konec."
+Ke každé stránce přidej i popis obrázku pro ilustrátora: co přesně je vidět, kde je hrdina, jak vypadá (stejně na všech stránkách), barvy a prostředí.
+Odpověz POUZE platným JSON bez dalšího textu, ve tvaru:
+{"title":"Název pohádky","pages":[{"text":"text stránky","scene":"popis obrázku"}]}`;
+    try {
+      obj = parseJSON(await ai(prompt, 'text'));
+      if (!obj || !Array.isArray(obj.pages) || !obj.pages.length) throw new Error('prázdné');
+    } catch (e) {
+      sbusy(false);
+      toast('Kouzelník se zamotal. Zkus to prosím znovu.');
+      return;
+    }
+    sbusy(false);
+  } else { obj = demoStory(h, pick); demo = true; }
+  const story = {
+    id: 's' + Date.now(), for: [PH.cur], at: Date.now(), fav: false, demo,
+    title: String(obj.title || 'Pohádka').slice(0, 80),
+    heroId: h.id || null, kind: h.kind || null,
+    look: { heroE: heroEmoji(h), friendE: fr && fr.id !== 'nikdo' ? fr.e : '', place: pl.id, hero: heroLook(h) },
+    pages: obj.pages.slice(0, 8).map(pg => ({ text: String(pg.text || ''), scene: String(pg.scene || ''), svg: null })),
+  };
+  PH.stories.push(story); phSave();
+  openReader(story, 0);
+  illustrate(story);
+}
+
+// --- illustrations ---
+function sceneSvg(story, i) {
+  const pl = byIdIn(PLACES, story.look.place) || PLACES[0];
+  const deco = [...pl.deco.matchAll(/\p{Extended_Pictographic}️?/gu)].map(m => m[0]);
+  const x = [120, 200, 280][i % 3], fx = x > 200 ? x - 110 : x + 110;
+  const stars = pl.id === 'vesmir' ? Array.from({ length: 18 }, (_, k) => `<circle cx="${(k * 53) % 400}" cy="${(k * 37) % 150}" r="2" fill="#fff4c2"/>`).join('') : '<circle cx="340" cy="50" r="26" fill="#ffd54a"/>';
+  return `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><rect width="400" height="300" fill="${pl.sky}"/>${stars}
+<path d="M0 210 Q100 180 200 205 T400 200 V300 H0 Z" fill="${pl.ground}"/>
+<text x="40" y="200" font-size="54">${deco[0] || ''}</text><text x="320" y="215" font-size="46">${deco[1] || ''}</text><text x="${i % 2 ? 60 : 300}" y="120" font-size="36">${deco[2] || ''}</text>
+<text x="${x}" y="250" font-size="96" text-anchor="middle">${story.look.heroE}</text>
+${story.look.friendE ? `<text x="${fx}" y="255" font-size="60" text-anchor="middle">${story.look.friendE}</text>` : ''}</svg>`;
+}
+const drawing = new Set();
+async function illustrate(story) {
+  const todo = story.pages.map((pg, i) => i).filter(i => !story.pages[i].svg && !drawing.has(story.id + ':' + i));
+  if (!todo.length) return;
+  if (story.demo || !aiReady()) {
+    todo.forEach(i => { story.pages[i].svg = sceneSvg(story, i); });
+    phSave(); refreshPic(story); return;
+  }
+  todo.forEach(i => drawing.add(story.id + ':' + i));
+  const work = async i => {
+    const pg = story.pages[i];
+    let svg = null;
+    try {
+      svg = cleanSvg(await ai(`Nakresli ilustraci do dětské pohádkové knížky jako jeden SVG obrázek.
+Scéna: ${pg.scene || pg.text}
+Hlavní hrdina (musí vypadat přesně takto): ${story.look.hero}
+Pravidla: <svg> s viewBox="0 0 400 300" bez width a height; vyplň celé pozadí (obloha, zem, prostředí); plné veselé barvy, jednoduché zaoblené tvary, roztomilé postavičky s velkýma očima; hrdina výrazně v popředí; nic strašidelného; žádný text, žádné <script>, <image>, <foreignObject>, odkazy ani externí zdroje; nejvýš 80 prvků.
+Odpověz pouze SVG kódem, nic jiného.`, 'svg'));
+    } catch (e) {}
+    pg.svg = svg || sceneSvg(story, i);
+    drawing.delete(story.id + ':' + i);
+    phSave(); refreshPic(story);
+  };
+  const queue = [...todo];
+  const runner = async () => { while (queue.length) await work(queue.shift()); };
+  await Promise.all([runner(), runner()]);
+}
+function refreshPic(story) {
+  if (!$('read').hidden && rd.story === story) paintPic();
+}
+
+// --- reader ---
+let rd = { story: null, i: 0 }, rate = ls.get('rychlost') || 0.9;
+const SPEAKER = $('say').innerHTML;
+$('rSay').innerHTML = SPEAKER; $('wSay').innerHTML = SPEAKER;
+if (!synth) { $('rSay').hidden = true; $('wSay').hidden = true; document.querySelector('.speed').hidden = true; }
+function openReader(story, i) {
+  rd = { story, i };
+  go('read'); paintRead();
+  if (story.pages.some(p => !p.svg)) illustrate(story);
+}
+function paintPic() {
+  const s = rd.story, N = s.pages.length;
+  const pg = s.pages[Math.min(rd.i, N - 1)];
+  const inner = rd.i >= N
+    ? (s.pages[0].svg || '')
+    : pg.svg || `<div class="loading"><span class="pen">✏️</span><br>Kreslím obrázek…</div>`;
+  $('rPic').innerHTML = `<div class="frame2">${inner}</div>`;
+}
+function paintRead() {
+  hushAll();
+  const s = rd.story, N = s.pages.length, end = rd.i >= N;
+  $('rTitle').textContent = s.title;
+  $('rFav').textContent = s.fav ? '❤️' : '🤍';
+  paintPic();
+  const T = $('rText');
+  T.classList.toggle('small', isSmall());
+  const text = end ? 'A zazvonil zvonec a pohádky byl konec. Líbila se ti?' : s.pages[rd.i].text;
+  T.innerHTML = '';
+  let pos = 0;
+  for (const part of text.split(/(\s+)/)) {
+    if (!part) continue;
+    if (/^\s+$/.test(part)) T.appendChild(document.createTextNode(part));
+    else { const sp = document.createElement('span'); sp.className = 'w'; sp.dataset.at = pos; sp.textContent = part; T.appendChild(sp); }
+    pos += part.length;
+  }
+  $('rPrev').disabled = rd.i === 0;
+  $('rNext').hidden = end;
+  $('rNext').textContent = rd.i === N - 1 ? 'Konec ▶' : 'Další ▶';
+  const E = $('rEnd'); E.hidden = !end; E.innerHTML = '';
+  if (end) {
+    const k = kindOf(s.kind), dr = k && k.draw && byId[k.draw];
+    if (dr) addEndBtn('btn-go', '🖍️ Nakresli si: ' + dr.name, () => { hushAll(); openDrawing(dr); });
+    const other = PH.profiles.filter(p => p.id !== PH.cur);
+    other.forEach(o => {
+      const has = s.for.includes(o.id);
+      addEndBtn('btn-soft', has ? `✔ Je i v knihovničce: ${o.name}` : `📤 Poslat do knihovničky: ${o.name}`, () => {
+        if (!s.for.includes(o.id)) { s.for.push(o.id); phSave(); toast('Posláno: ' + o.name); paintRead(); }
+      });
+    });
+    addEndBtn('btn-soft', '📚 Zpět do knihovničky', () => { hushAll(); go('stories'); });
+    let armed = 0;
+    const del = addEndBtn('btn-soft danger', '🗑 Smazat pohádku', () => {
+      if (!armed) { armed = setTimeout(() => { armed = 0; del.textContent = '🗑 Smazat pohádku'; }, 3000); del.textContent = 'Opravdu smazat? Klepni znovu'; return; }
+      clearTimeout(armed);
+      PH.stories = PH.stories.filter(x => x.id !== s.id); phSave(); toast('Smazáno'); go('stories');
+    });
+    if (!progress.done['p:' + s.id]) { progress.done['p:' + s.id] = Date.now(); saveProgress(); toast(STAR + ' Máš novou hvězdičku!', true); }
+  }
+  if (isSmall() || voiceOn) setTimeout(() => readAloud(), 300);
+}
+function addEndBtn(cls, label, fn) {
+  const b = document.createElement('button'); b.className = cls; b.textContent = label;
+  b.addEventListener('click', fn); $('rEnd').appendChild(b); return b;
+}
+function clearHl() { $('rText').querySelectorAll('.hl').forEach(x => x.classList.remove('hl')); }
+function hushAll() { hush(); $('rSay').classList.remove('talking'); clearHl(); }
+function readAloud() {
+  if (!synth || $('read').hidden) return;
+  hushAll();
+  const words = [...$('rText').querySelectorAll('.w')];
+  const text = $('rText').textContent;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'cs-CZ'; if (czVoice) u.voice = czVoice; u.rate = rate;
+  u.onstart = () => $('rSay').classList.add('talking');
+  u.onboundary = e => {
+    if (e.name && e.name !== 'word') return;
+    let w = null;
+    for (const sp of words) { if (+sp.dataset.at <= e.charIndex) w = sp; else break; }
+    clearHl(); if (w) w.classList.add('hl');
+  };
+  u.onend = u.onerror = () => { $('rSay').classList.remove('talking'); clearHl(); };
+  try { synth.speak(u); } catch (e) {}
+}
+$('rSay').addEventListener('click', () => { if ($('rSay').classList.contains('talking')) hushAll(); else readAloud(); });
+$('rNext').addEventListener('click', () => { if (rd.i < rd.story.pages.length) { rd.i++; paintRead(); } });
+$('rPrev').addEventListener('click', () => { if (rd.i > 0) { rd.i--; paintRead(); } });
+$('rBack').addEventListener('click', () => { hushAll(); go('stories'); });
+$('rFav').addEventListener('click', () => { rd.story.fav = !rd.story.fav; phSave(); $('rFav').textContent = rd.story.fav ? '❤️' : '🤍'; });
+function setRate(r) {
+  rate = Math.max(0.6, Math.min(1.2, Math.round(r * 100) / 100)); ls.set('rychlost', rate);
+  toast('Rychlost čtení: ' + (rate < 0.8 ? 'pomalá' : rate > 1 ? 'rychlá' : 'normální'));
+  readAloud();
+}
+$('rSlow').addEventListener('click', () => setRate(rate - 0.15));
+$('rFast').addEventListener('click', () => setRate(rate + 0.15));
+$('openStories').addEventListener('click', () => { hush(); animToken++; go('stories'); });
 
 renderHome();
 
