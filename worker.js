@@ -1,4 +1,4 @@
-// Cloudflare Worker pro sekci Pohádky v aplikaci Kreslíme (v1.15)
+// Cloudflare Worker pro sekci Pohádky v aplikaci Kreslíme (v1.17)
 // Drží Claude API klíč v tajnosti a předává dotazy z aplikace do Claude API.
 //
 // Nastavení v Cloudflare (Workers → tvůj worker → Settings → Variables and Secrets):
@@ -33,7 +33,7 @@ export default {
     const m = raw.match(/sk-ant-[A-Za-z0-9_\-]+/);
     const key = m ? m[0] : raw.trim();
 
-    if (body.ping) return json({ ok: true, version: '1.15', key: key ? 'ok' : 'chybí' }, 200, cors);
+    if (body.ping) return json({ ok: true, version: '1.17', key: key ? 'ok' : 'chybí', model: (env.MODEL || 'claude-sonnet-5-5').trim() }, 200, cors);
     if (!key) return json({ error: 'Ve workeru chybí ANTHROPIC_API_KEY' }, 500, cors);
 
     const prompt = typeof body.prompt === 'string' ? body.prompt : '';
@@ -59,10 +59,18 @@ export default {
       return json({ error: 'Claude API ' + r.status, detail: detail.slice(0, 300) }, 502, cors);
     }
     const data = await r.json();
-    const text = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
-    return json({ text, stop: data.stop_reason || '' }, 200, cors);
+    const blocks = Array.isArray(data.content) ? data.content : [];
+    // text z jakéhokoli bloku, který text obsahuje (kromě přemýšlení)
+    const text = blocks.filter(c => c && typeof c.text === 'string' && !/thinking/.test(c.type || '')).map(c => c.text).join('');
+    const diag = 'stop=' + (data.stop_reason || '?') + ', bloky=[' + blocks.map(c => c && c.type).join(',') + '], model=' + (data.model || '?')
+      + (data.usage ? ', tokeny=' + data.usage.output_tokens : '');
+    console.log('pohadky ' + kindLabel(body.kind) + ': ' + diag + ', délka textu=' + text.length);
+    if (!text.trim()) return json({ error: 'Claude vrátil prázdnou odpověď', detail: diag }, 502, cors);
+    return json({ text, stop: data.stop_reason || '', diag }, 200, cors);
   },
 };
+
+function kindLabel(k) { return k === 'svg' ? 'obrázek' : 'text'; }
 
 function json(obj, status, headers) {
   return new Response(JSON.stringify(obj), { status, headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' } });

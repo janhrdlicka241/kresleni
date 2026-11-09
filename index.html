@@ -336,7 +336,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     </div>
     <div class="jgrid" id="jgrid"></div>
     <button class="btn-soft parent" id="unlock" hidden></button>
-    <p class="note">Verze 1.16</p>
+    <p class="note">Verze 1.17</p>
   </section>
 
   <section class="screen stories" id="stories" hidden>
@@ -348,7 +348,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     <div id="sBody" style="display:flex;flex-direction:column;gap:18px"></div>
     <button class="btn-soft parent" id="sParent">Pro rodiče: podrž 2 s pro nastavení</button>
     <div class="ppanel" id="sPanel" hidden></div>
-    <p class="note">Verze 1.16</p>
+    <p class="note">Verze 1.17</p>
   </section>
 
   <section class="screen hero" id="hero" hidden>
@@ -2063,6 +2063,7 @@ async function ai(prompt, kind) {
   if (!r.ok) throw new Error('Worker ' + r.status + (d && d.error ? ': ' + d.error : '') + (d && d.detail ? ' – ' + d.detail : ''));
   if (!d) throw new Error('Worker vrátil nečitelnou odpověď.');
   lastStop = d.stop || '';
+  if (!String(d.text || '').trim()) throw new Error('Worker vrátil prázdnou odpověď' + (d.diag ? ' (' + d.diag + ')' : d.stop ? ' (stop=' + d.stop + ')' : ' – vlož do workeru nový worker.js'));
   return d.text || '';
 }
 let lastStop = '';
@@ -2078,7 +2079,7 @@ async function pingWorker(u) {
   try {
     const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ping: true }) });
     let d = null; try { d = await r.json(); } catch (e) {}
-    if (r.ok && d && d.ok) return d.key === 'ok' ? '✅ Worker odpovídá a má klíč.' : '⚠️ Worker odpovídá, ale chybí mu ANTHROPIC_API_KEY.';
+    if (r.ok && d && d.ok) return d.key === 'ok' ? '✅ Worker ' + (d.version || '') + ' odpovídá a má klíč' + (d.model ? ' (model ' + d.model + ')' : '') + '.' : '⚠️ Worker odpovídá, ale chybí mu ANTHROPIC_API_KEY.';
     if (r.status === 400 && d && /zadání/.test(d.error || '')) return '⚠️ Worker odpovídá, ale má starý kód – vlož do něj nový worker.js.';
     if (r.status === 403) return '❌ Worker nepovolil tuhle adresu aplikace (zkontroluj ALLOWED_ORIGIN).';
     return '❌ Worker vrátil chybu ' + r.status + (d && d.error ? ': ' + d.error : '');
@@ -2122,7 +2123,7 @@ function parseStory(raw, n) {
     return fin(out);
   }
   const snip = String(raw || '').replace(/\s+/g, ' ').trim().slice(0, 140);
-  throw new Error('Odpověď AI nemá očekávaný tvar' + (lastStop === 'max_tokens' ? ' (byla useknutá)' : '') + '. Začátek odpovědi: „' + (snip || '(prázdná)') + '"');
+  throw new Error('Odpověď AI nemá očekávaný tvar' + (lastStop === 'max_tokens' ? ' (byla useknutá)' : lastStop ? ' (stop=' + lastStop + ')' : '') + '. Začátek odpovědi: „' + (snip || '(prázdná)') + '"');
 }
 function parseJSON(t) {
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
@@ -2500,7 +2501,7 @@ OBRÁZEK: …
         obj = o;
       } catch (e) {
         lastErr = e;
-        if (/spojit|Worker 4|Worker 5|offline/.test(e.message || '')) break;
+        if (/spojit|Worker 4|Worker 5|prázdnou|offline/.test(e.message || '')) break;
       }
     }
     sbusy(false);
