@@ -1,8 +1,8 @@
-// Cloudflare Worker pro sekci Pohádky v aplikaci Kreslíme (v1.14)
+// Cloudflare Worker pro sekci Pohádky v aplikaci Kreslíme (v1.15)
 // Drží Claude API klíč v tajnosti a předává dotazy z aplikace do Claude API.
 //
 // Nastavení v Cloudflare (Workers → tvůj worker → Settings → Variables and Secrets):
-//   ANTHROPIC_API_KEY  (Secret)  – klíč z console.anthropic.com
+//   ANTHROPIC_API_KEY  (Secret)  – klíč z console.anthropic.com (jen samotný klíč sk-ant-…)
 //   ALLOWED_ORIGIN     (Text)    – https://janhrdlicka241.github.io
 //   MODEL              (Text, nepovinné) – výchozí claude-sonnet-5-5
 
@@ -13,7 +13,7 @@ const SYSTEM = 'Jsi laskavý vypravěč pohádek pro malé děti a ilustrátor j
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
-    const allowed = (env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+    const allowed = (env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(Boolean);
     const ok = allowed.includes(origin);
     const cors = {
       'Access-Control-Allow-Origin': ok ? origin : 'null',
@@ -27,31 +27,40 @@ export default {
 
     let body;
     try { body = await request.json(); } catch (e) { return json({ error: 'Špatný požadavek' }, 400, cors); }
-    const prompt = typeof body.prompt === 'string' ? body.prompt : '';
-    if (!prompt || prompt.length > 6000) return json({ error: 'Chybí nebo příliš dlouhé zadání' }, 400, cors);
-    const kind = body.kind === 'svg' ? 'svg' : 'text';
 
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: env.MODEL || 'claude-sonnet-5-5',
-        max_tokens: kind === 'svg' ? 6000 : 3000,
-        system: SYSTEM,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
+    // klíč: vezme jen samotné sk-ant-… i kdyby se do pole vložilo víc textu
+    const raw = String(env.ANTHROPIC_API_KEY || '');
+    const m = raw.match(/sk-ant-[A-Za-z0-9_\-]+/);
+    const key = m ? m[0] : raw.trim();
+
+    if (body.ping) return json({ ok: true, version: '1.15', key: key ? 'ok' : 'chybí' }, 200, cors);
+    if (!key) return json({ error: 'Ve workeru chybí ANTHROPIC_API_KEY' }, 500, cors);
+
+    const prompt = typeof body.prompt === 'string' ? body.prompt : '';
+    if (!prompt || prompt.length > 8000) return json({ error: 'Chybí nebo příliš dlouhé zadání' }, 400, cors);
+
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: (env.MODEL || 'claude-sonnet-5-5').trim(),
+          max_tokens: 8000,
+          system: SYSTEM,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      return json({ error: 'Nepodařilo se spojit s Claude API: ' + e.message }, 502, cors);
+    }
     if (!r.ok) {
       const detail = await r.text();
       return json({ error: 'Claude API ' + r.status, detail: detail.slice(0, 300) }, 502, cors);
     }
     const data = await r.json();
     const text = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
-    return json({ text }, 200, cors);
+    return json({ text, stop: data.stop_reason || '' }, 200, cors);
   },
 };
 

@@ -185,9 +185,11 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
 .acts .rand { background: var(--sheet); box-shadow: 0 5px 0 var(--line); }
 .acts > button:active { transform: translateY(4px); box-shadow: none; }
 .ai-note { background: var(--hint); border: 2px solid var(--hint-edge); border-radius: 16px; padding: 10px 14px; font-weight: 700; }
-.portrait { width: 100%; max-width: 150px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; overflow: hidden; position: relative; }
-.portrait .pe { font-size: 4.6rem; line-height: 1; }
-.portrait .pa { position: absolute; right: 8%; top: 6%; font-size: 1.9rem; }
+.portrait { width: 100%; max-width: 150px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; overflow: hidden; position: relative; container-type: inline-size; }
+.portrait .pe { font-size: 52cqw; line-height: 1; }
+.portrait .pa { position: absolute; transform: translate(-50%, -50%); line-height: 1; pointer-events: none; z-index: 2; }
+.portrait .pa.back { z-index: 0; }
+.portrait .pe { position: relative; z-index: 1; }
 .portrait svg { width: 100%; height: 100%; }
 .card .add { width: 100%; max-width: 150px; aspect-ratio: 1; border-radius: 50%; border: 4px dashed var(--line); display: grid; place-items: center; font-size: 3.4rem; color: var(--muted); box-sizing: border-box; }
 .scard { position: relative; background: var(--sheet); border-radius: 22px; padding: 10px; box-shadow: 0 4px 0 var(--line); display: flex; flex-direction: column; gap: 6px; text-align: left; }
@@ -334,7 +336,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     </div>
     <div class="jgrid" id="jgrid"></div>
     <button class="btn-soft parent" id="unlock" hidden></button>
-    <p class="note">Verze 1.14</p>
+    <p class="note">Verze 1.15</p>
   </section>
 
   <section class="screen stories" id="stories" hidden>
@@ -346,7 +348,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     <div id="sBody" style="display:flex;flex-direction:column;gap:18px"></div>
     <button class="btn-soft parent" id="sParent">Pro rodiče: podrž 2 s pro nastavení</button>
     <div class="ppanel" id="sPanel" hidden></div>
-    <p class="note">Verze 1.14</p>
+    <p class="note">Verze 1.15</p>
   </section>
 
   <section class="screen hero" id="hero" hidden>
@@ -2054,10 +2056,51 @@ async function ai(prompt, kind) {
     catch (e) { if (e && e.code === 'not_granted') sampleFn = null; if (!workerUrl()) throw e; }
   }
   if (!workerUrl()) throw new Error('offline');
-  const r = await fetch(workerUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, kind }) });
-  if (!r.ok) throw new Error('worker ' + r.status);
-  const d = await r.json();
+  let r;
+  try { r = await fetch(workerUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, kind }) }); }
+  catch (e) { throw new Error('Nepodařilo se spojit s workerem (zkontroluj adresu v nastavení).'); }
+  let d = null; try { d = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error('Worker ' + r.status + (d && d.error ? ': ' + d.error : '') + (d && d.detail ? ' – ' + d.detail : ''));
+  if (!d) throw new Error('Worker vrátil nečitelnou odpověď.');
+  lastStop = d.stop || '';
   return d.text || '';
+}
+let lastStop = '';
+// adresa workeru: doplní https://, odstraní nesmysly okolo
+function normUrl(u) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  const m = u.match(/[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(\/[^\s"']*)?/i);
+  if (!m) return u;
+  return 'https://' + m[0].replace(/^[-.]+/, '');
+}
+async function pingWorker(u) {
+  try {
+    const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ping: true }) });
+    let d = null; try { d = await r.json(); } catch (e) {}
+    if (r.ok && d && d.ok) return d.key === 'ok' ? '✅ Worker odpovídá a má klíč.' : '⚠️ Worker odpovídá, ale chybí mu ANTHROPIC_API_KEY.';
+    if (r.status === 400 && d && /zadání/.test(d.error || '')) return '⚠️ Worker odpovídá, ale má starý kód – vlož do něj nový worker.js.';
+    if (r.status === 403) return '❌ Worker nepovolil tuhle adresu aplikace (zkontroluj ALLOWED_ORIGIN).';
+    return '❌ Worker vrátil chybu ' + r.status + (d && d.error ? ': ' + d.error : '');
+  } catch (e) { return '❌ Na tuhle adresu se nedá připojit. Zkontroluj ji.'; }
+}
+function parseStory(t) {
+  t = String(t || '').replace(/\r/g, '');
+  // 1) textový formát: NÁZEV / === STRÁNKA / TEXT / OBRÁZEK
+  const tm = t.match(/N[ÁA]ZEV\s*:\s*(.+)/i);
+  const blocks = t.split(/^\s*={2,}.*$/m).slice(1);
+  const pages = [];
+  for (const b of blocks) {
+    const tx = b.match(/TEXT\s*:\s*([\s\S]*?)(?=^\s*OBR[ÁA]ZEK\s*:|$(?![\s\S]))/im);
+    const ob = b.match(/OBR[ÁA]ZEK\s*:\s*([\s\S]*)/i);
+    const text = (tx ? tx[1] : '').trim();
+    if (text) pages.push({ text, scene: ob ? ob[1].trim() : '' });
+  }
+  if (pages.length) return { title: tm ? tm[1].trim().replace(/^["„“]|["“”]$/g, '') : 'Pohádka', pages };
+  // 2) záloha: JSON (i s rozbitými uvozovkami)
+  try { return parseJSON(t); } catch (e) {}
+  try { return parseJSON(t.replace(/[„“”]/g, "'")); } catch (e) {}
+  throw new Error('Odpověď AI nemá očekávaný tvar' + (lastStop === 'max_tokens' ? ' (byla useknutá)' : '') + '.');
 }
 function parseJSON(t) {
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
@@ -2106,11 +2149,35 @@ function heroLook(h) {
 }
 const heroName = h => h.name || (kindOf(h.kind) ? kindOf(h.kind).label : 'Hrdina');
 const heroEmoji = h => (kindOf(h.kind) || { e: '⭐' }).e;
+// kde je na postavičce hlava: [střed x %, temeno y %, oči y %] – u zvířat s ušima/rohem je temeno níž
+const HEAD = {
+  liska: [50, 30, 47], kocka: [50, 30, 49], pes: [50, 27, 46], zajic: [50, 40, 58], sova: [50, 29, 44], jezek: [36, 42, 56],
+  prase: [50, 30, 48], medved: [50, 29, 47], drak: [52, 26, 42], jednorozec: [48, 30, 45], princezna: [50, 22, 47], rytir: [50, 22, 45],
+  vila: [46, 25, 34], robot: [50, 23, 47], holcicka: [50, 24, 48], kluk: [50, 25, 49], motyl: [50, 30, 42], prisera: [50, 25, 44],
+};
+function accStyle(h, a) {
+  const [x, top, eyes] = HEAD[h.kind] || [50, 26, 46];
+  switch (a.id) {
+    case 'korunka': case 'klobouk': return { x, y: top - 6, s: 34, back: false };
+    case 'masle': return { x: x + 14, y: top + 1, s: 26, back: false };
+    case 'bryle': return { x, y: eyes, s: 34, back: false };
+    case 'kridla': return { x: 50, y: 48, s: 40, back: true };
+    case 'plast': return { x, y: 74, s: 44, back: true };
+    case 'batoh': return { x: x + 26, y: 64, s: 30, back: false };
+    default: return { x: 78, y: 18, s: 28, back: false };
+  }
+}
 function portraitHTML(h) {
   if (h.svg) return `<span class="portrait" style="background:#fff6dc">${h.svg}</span>`;
   const c = byIdIn(COLORS, h.color), a = byIdIn(ACCS, h.acc);
   const bg = c ? c.c : '#fff6dc';
-  return `<span class="portrait" style="background:${bg}"><span class="pe">${heroEmoji(h)}</span>${a && a.acc ? `<span class="pa">${a.e}</span>` : ''}</span>`;
+  let acc = '';
+  if (a && a.acc) {
+    const st = accStyle(h, a);
+    const one = (x, flip) => `<span class="pa${st.back ? ' back' : ''}" style="left:${x}%;top:${st.y}%;font-size:${st.s * 0.85}cqw${flip ? ';transform:translate(-50%,-50%) scaleX(-1)' : ''}">${a.e}</span>`;
+    acc = a.id === 'kridla' ? one(st.x - 30, true) + one(st.x + 30, false) : one(st.x, false);
+  }
+  return `<span class="portrait" style="background:${bg}"><span class="pe">${heroEmoji(h)}</span>${acc}</span>`;
 }
 
 // --- screens ---
@@ -2174,20 +2241,29 @@ const pEnd = () => { clearTimeout(pHold); $('sParent').classList.remove('hold');
 $('sParent').addEventListener('pointerdown', () => { $('sParent').classList.add('hold'); pHold = setTimeout(() => { pEnd(); openPanel(); }, 2000); });
 ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('sParent').addEventListener(ev, pEnd));
 $('sParent').addEventListener('contextmenu', e => e.preventDefault());
+async function checkWorker() {
+  const st = $('pState'); if (!st || sampleFn || !workerUrl()) return;
+  st.textContent = 'Stav AI: ověřuji worker…';
+  const res = await pingWorker(workerUrl());
+  if ($('pState')) $('pState').textContent = 'Stav AI: ' + res;
+}
 function openPanel() {
   const P = $('sPanel');
   P.hidden = false;
   P.innerHTML = `<h3>Nastavení pro rodiče</h3>
     <div class="two">${PH.profiles.map((p, i) => `<div class="kid"><label>Jméno ${i + 1}<input id="pn${i}" value="${esc(p.name)}"></label><label>Věk<input id="pa${i}" type="number" min="2" max="14" value="${p.age}"></label></div>`).join('')}</div>
     <label>Adresa AI (Cloudflare Worker)<input id="pw" placeholder="https://pohadky.tvuj-ucet.workers.dev" value="${esc(PH.worker)}"></label>
-    <small>Stav AI: ${sampleFn ? 'připojeno přes claude.ai' : workerUrl() ? 'Worker nastaven' : 'nepřipojeno (ukázkové pohádky)'}</small>
+    <small id="pState">Stav AI: ${sampleFn ? 'připojeno přes claude.ai' : workerUrl() ? 'Worker nastaven – ověřuji…' : 'nepřipojeno (ukázkové pohádky)'}</small>
     <div class="row"><button class="btn btn-go" id="pSave" style="border-radius:16px;padding:10px 18px">Uložit</button><button class="btn-soft" id="pClose">Zavřít</button></div>
     ${PH.heroes.length ? '<h3>Smazat hrdinu</h3><div class="row" id="pHeroes"></div>' : ''}`;
   $('pSave').addEventListener('click', () => {
     PH.profiles.forEach((p, i) => { p.name = $('pn' + i).value.trim() || p.name; const a = parseInt($('pa' + i).value, 10); if (a > 1 && a < 15) p.age = a; });
-    PH.worker = $('pw').value.trim();
-    phSave(); P.hidden = true; renderStories(); toast('Uloženo');
+    PH.worker = normUrl($('pw').value);
+    $('pw').value = PH.worker;
+    phSave(); renderStories(); toast('Uloženo');
+    checkWorker();
   });
+  checkWorker();
   $('pClose').addEventListener('click', () => { P.hidden = true; });
   const ph = $('pHeroes');
   if (ph) PH.heroes.forEach(h => {
@@ -2315,6 +2391,7 @@ function renderWiz() {
     B.innerHTML = `<div class="summ">${chips.map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>
       <button class="btn btn-go big-go" id="wGo">✨ Vyčaruj pohádku</button>
       <button class="btn-soft" id="wAgain" style="align-self:flex-start">🎲 Zkusit jinak</button>`;
+    B.insertAdjacentHTML('afterbegin', '<div class="ai-note" id="wErr" hidden></div>');
     $('wGo').addEventListener('click', () => makeStory());
     $('wAgain').addEventListener('click', () => wizRandom());
     if (isSmall()) speak('Klepni na Vyčaruj pohádku.');
@@ -2340,6 +2417,14 @@ function renderWiz() {
   }
   B.appendChild(box);
   if (isSmall()) speak(QUESTIONS[step]);
+}
+function showWizErr(e) {
+  const box = $('wErr');
+  const msg = (e && e.message) || String(e || '');
+  if (!box) { toast('Kouzelník se zamotal. Zkus to prosím znovu.'); return; }
+  box.hidden = false;
+  box.innerHTML = '<b>Kouzelník se zamotal.</b> Zkus to prosím znovu.<br><small style="font-weight:600;color:var(--muted)">Důvod: ' + esc(msg) + '</small>';
+  sayKid('Kouzelník se zamotal. Zkus to znovu.');
 }
 $('wBack').addEventListener('click', () => { hushAll(); if (wiz.i > 0) { wiz.i--; renderWiz(); } else go('stories'); });
 $('wSay').addEventListener('click', () => speak($('wQ').textContent));
@@ -2374,18 +2459,30 @@ Co se stane: ${pt.label}.
 Zlobivec: ${vl && vl.id !== 'nikdo' ? vl.label + ' (nesmí být opravdu strašidelný, dobře to dopadne)' : 'žádný'}.
 Počet stránek: přesně ${n}.
 Pohádka má hezký začátek, napínavý (ale ne strašidelný) prostředek a šťastný konec s jemným ponaučením. Poslední stránka končí větou „A zazvonil zvonec a pohádky byl konec."
-Ke každé stránce přidej i popis obrázku pro ilustrátora: co přesně je vidět, kde je hrdina, jak vypadá (stejně na všech stránkách), barvy a prostředí.
-Odpověz POUZE platným JSON bez dalšího textu, ve tvaru:
-{"title":"Název pohádky","pages":[{"text":"text stránky","scene":"popis obrázku"}]}`;
-    try {
-      obj = parseJSON(await ai(prompt, 'text'));
-      if (!obj || !Array.isArray(obj.pages) || !obj.pages.length) throw new Error('prázdné');
-    } catch (e) {
-      sbusy(false);
-      toast('Kouzelník se zamotal. Zkus to prosím znovu.');
-      return;
+Ke každé stránce přidej krátký popis obrázku pro ilustrátora (1–2 věty): co je vidět, kde je hrdina a jak vypadá (stejně na všech stránkách).
+Odpověz přesně v tomto tvaru, bez úvodu a bez dalšího textu:
+NÁZEV: název pohádky
+=== STRÁNKA 1
+TEXT: text první stránky
+OBRÁZEK: popis obrázku
+=== STRÁNKA 2
+TEXT: …
+OBRÁZEK: …
+(a tak dál až do stránky ${n})`;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2 && !obj; attempt++) {
+      if (attempt) sbusy(true, 'Ještě jednou, kouzelník to zkusí znovu…');
+      try {
+        const o = parseStory(await ai(prompt, 'text'));
+        if (!o || !Array.isArray(o.pages) || !o.pages.length) throw new Error('Pohádka přišla prázdná.');
+        obj = o;
+      } catch (e) {
+        lastErr = e;
+        if (/spojit|Worker 4|Worker 5|offline/.test(e.message || '')) break;
+      }
     }
     sbusy(false);
+    if (!obj) { showWizErr(lastErr); return; }
   } else { obj = demoStory(h, pick); demo = true; }
   const story = {
     id: 's' + Date.now(), for: [PH.cur], at: Date.now(), fav: false, demo,
