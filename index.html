@@ -336,7 +336,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     </div>
     <div class="jgrid" id="jgrid"></div>
     <button class="btn-soft parent" id="unlock" hidden></button>
-    <p class="note">Verze 1.15</p>
+    <p class="note">Verze 1.16</p>
   </section>
 
   <section class="screen stories" id="stories" hidden>
@@ -348,7 +348,7 @@ button:focus-visible, .btn:focus-within { outline: 4px solid var(--new); outline
     <div id="sBody" style="display:flex;flex-direction:column;gap:18px"></div>
     <button class="btn-soft parent" id="sParent">Pro rodiče: podrž 2 s pro nastavení</button>
     <div class="ppanel" id="sPanel" hidden></div>
-    <p class="note">Verze 1.15</p>
+    <p class="note">Verze 1.16</p>
   </section>
 
   <section class="screen hero" id="hero" hidden>
@@ -2084,23 +2084,45 @@ async function pingWorker(u) {
     return '❌ Worker vrátil chybu ' + r.status + (d && d.error ? ': ' + d.error : '');
   } catch (e) { return '❌ Na tuhle adresu se nedá připojit. Zkontroluj ji.'; }
 }
-function parseStory(t) {
-  t = String(t || '').replace(/\r/g, '');
-  // 1) textový formát: NÁZEV / === STRÁNKA / TEXT / OBRÁZEK
-  const tm = t.match(/N[ÁA]ZEV\s*:\s*(.+)/i);
-  const blocks = t.split(/^\s*={2,}.*$/m).slice(1);
-  const pages = [];
-  for (const b of blocks) {
-    const tx = b.match(/TEXT\s*:\s*([\s\S]*?)(?=^\s*OBR[ÁA]ZEK\s*:|$(?![\s\S]))/im);
-    const ob = b.match(/OBR[ÁA]ZEK\s*:\s*([\s\S]*)/i);
-    const text = (tx ? tx[1] : '').trim();
-    if (text) pages.push({ text, scene: ob ? ob[1].trim() : '' });
+function parseStory(raw, n) {
+  const t = String(raw || '').replace(/\r/g, '').replace(/```[a-z]*\n?/gi, '')
+    .split('\n').map(l => l.replace(/\*\*|__/g, '').replace(/^\s*#{1,6}\s*/, '').replace(/^\s*>\s?/, '')).join('\n');
+  const IMG = /^\s*[-•]?\s*(OBR[ÁA]ZEK|ILUSTRACE|SC[ÉE]NA|POPIS OBR[ÁA]ZKU)\s*:/i;
+  const HEAD = /^\s*(?:=+\s*)?(?:STR[ÁA]NKA|STRANA|PAGE)\s*(\d+)\s*[:.)\-–]?\s*=*\s*(.*)$/i;
+  const TITLE = /^\s*(N[ÁA]ZEV(?: POH[ÁA]DKY)?|TITUL|TITLE)\s*:\s*(.+)$/i;
+  const clean = x => x.replace(/^\s*TEXT\s*:\s*/i, '').replace(/^["„“”]+|["„“”]+$/g, '').trim();
+  let title = '';
+  const lines = t.split('\n');
+  const tl = lines.find(l => TITLE.test(l));
+  if (tl) title = tl.match(TITLE)[2];
+  // 1) stránky podle nadpisů (=== / ### / Stránka 1 / Strana 1:)
+  const pages = []; let cur = null;
+  const flush = () => { if (!cur) return; const text = clean(cur.text.join('\n')); if (text) pages.push({ text, scene: cur.scene.join(' ').trim() }); cur = null; };
+  for (const l of lines) {
+    if (TITLE.test(l)) continue;
+    const h = l.match(HEAD);
+    if (h || /^\s*={2,}\s*$/.test(l)) { flush(); cur = { text: [], scene: [], img: false }; if (h && h[2] && !/^=+$/.test(h[2])) cur.text.push(h[2]); continue; }
+    if (!cur) { const c = l.trim(); if (!title && c && c.length < 80 && !/:$/.test(c) && !/^(tady|zde|samozřejmě|jistě)\b/i.test(c)) title = c.replace(/^N[ÁA]ZEV\s*:\s*/i, ''); continue; }
+    if (IMG.test(l)) { cur.img = true; cur.scene.push(l.replace(IMG, '').trim()); continue; }
+    if (/^\s*TEXT\s*:/i.test(l)) cur.img = false;
+    (cur.img ? cur.scene : cur.text).push(l);
   }
-  if (pages.length) return { title: tm ? tm[1].trim().replace(/^["„“]|["“”]$/g, '') : 'Pohádka', pages };
-  // 2) záloha: JSON (i s rozbitými uvozovkami)
+  flush();
+  const fin = ps => ({ title: (title || 'Pohádka').replace(/^["„“]+|["“”]+$/g, '').trim(), pages: ps });
+  if (pages.length) return fin(pages);
+  // 2) JSON
   try { return parseJSON(t); } catch (e) {}
-  try { return parseJSON(t.replace(/[„“”]/g, "'")); } catch (e) {}
-  throw new Error('Odpověď AI nemá očekávaný tvar' + (lastStop === 'max_tokens' ? ' (byla useknutá)' : '') + '.');
+  // 3) záchrana: odstavce rozdělené na stránky
+  const paras = t.split(/\n\s*\n/).map(p => p.split('\n').filter(l => !IMG.test(l) && !TITLE.test(l)).join(' ').trim())
+    .filter(p => p.length > 15 && !/^(tady|zde|samozřejmě|jistě)\b.*:$/i.test(p));
+  if (!title && paras.length > 1 && paras[0].length < 70 && !/[.!?]$/.test(paras[0])) title = paras.shift();
+  if (paras.join(' ').length > 80) {
+    const k = Math.max(1, Math.min(n || 3, paras.length)), per = Math.ceil(paras.length / k), out = [];
+    for (let i = 0; i < paras.length; i += per) out.push({ text: clean(paras.slice(i, i + per).join(' ')), scene: '' });
+    return fin(out);
+  }
+  const snip = String(raw || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+  throw new Error('Odpověď AI nemá očekávaný tvar' + (lastStop === 'max_tokens' ? ' (byla useknutá)' : '') + '. Začátek odpovědi: „' + (snip || '(prázdná)') + '"');
 }
 function parseJSON(t) {
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
@@ -2473,7 +2495,7 @@ OBRÁZEK: …
     for (let attempt = 0; attempt < 2 && !obj; attempt++) {
       if (attempt) sbusy(true, 'Ještě jednou, kouzelník to zkusí znovu…');
       try {
-        const o = parseStory(await ai(prompt, 'text'));
+        const o = parseStory(await ai(prompt, 'text'), n);
         if (!o || !Array.isArray(o.pages) || !o.pages.length) throw new Error('Pohádka přišla prázdná.');
         obj = o;
       } catch (e) {
